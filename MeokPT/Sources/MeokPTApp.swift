@@ -1,6 +1,9 @@
 import SwiftUI
 import ComposableArchitecture
 import FirebaseCore
+import KakaoSDKCommon
+import KakaoSDKAuth
+
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -18,11 +21,21 @@ struct MeokPTApp: App {
         AppFeature()
     }
     
+    init() {
+        let kakaoSDKKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_SDK_KEY") as? String ?? ""
+        KakaoSDK.initSDK(appKey: kakaoSDKKey)
+    }
+    
     var body: some Scene {
         WindowGroup {
             AppView(store: MeokPTApp.store)
                 .tint(Color("AppTintColor"))
                 .modelContainer(for: [BodyInfo.self, NutritionItem.self])
+                .onOpenURL { url in
+                    if (AuthApi.isKakaoTalkLoginUrl(url)) {
+                        _ = AuthController.handleOpenUrl(url: url)
+                    }
+                }
         }
     }
 }
