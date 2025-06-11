@@ -25,7 +25,6 @@ struct MeokPTApp: App {
     
     init() {
         let kakaoSDKKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_SDK_KEY") as? String ?? ""
-        let kakaoSDKKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_SDK_KEY") as? String ?? ""
         KakaoSDK.initSDK(appKey: kakaoSDKKey)
     }
     
