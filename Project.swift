@@ -1,4 +1,5 @@
 import ProjectDescription
+import Foundation
 
 let project = Project(
     name: "MeokPT",
@@ -44,7 +45,8 @@ let project = Project(
                             "CFBundleURLSchemes": ["kakao\(String(describing: (loadKakaoKey())))"]
                         ]
                     ],
-                    "NSCameraUsageDescription": "바코드를 스캔하여 식품 정보를 조회하기 위해 카메라 권한이 필요합니다."
+                    "NSCameraUsageDescription": "바코드를 스캔하여 식품 정보를 조회하기 위해 카메라 권한이 필요합니다.",
+                    "KAKAO_SDK_KEY": .string(loadKakaoKey())
                 ]
             ),
             sources: ["MeokPT/Sources/**"],
@@ -94,3 +96,17 @@ let project = Project(
         )
     ]
 )
+
+private func loadKakaoKey() -> String {
+    let fileURL = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .appendingPathComponent(".tuist-env")
+    
+    guard let content = try? String(contentsOf: fileURL, encoding: .utf8),
+          let line = content.components(separatedBy: .newlines)
+            .first(where: { $0.hasPrefix("KAKAO_SDK_KEY=") }) else {
+        return ""
+    }
+    
+    return String(line.dropFirst("KAKAO_SDK_KEY=".count))
+}
