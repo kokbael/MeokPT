@@ -34,7 +34,10 @@ struct ProfileSettingFeature {
         var isSavingProfile = false
         var saveProfileError: String?
         var profileSaveSuccess = false
-        
+        var isInitialProfileSetting: Bool {
+            userProfile?.nickname == nil
+        }
+
         init(currentUser: User? = nil, userProfile: UserProfile? = nil) {
             self.currentUser = currentUser
             self.userProfile = userProfile

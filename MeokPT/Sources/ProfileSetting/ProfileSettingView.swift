@@ -119,9 +119,11 @@ struct ProfileSettingView: View {
             .navigationTitle("프로필 설정")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("취소") {
-                        store.send(.cancelButtonTapped)
+                if !store.isInitialProfileSetting {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("취소") {
+                            store.send(.cancelButtonTapped)
+                        }
                     }
                 }
             }
