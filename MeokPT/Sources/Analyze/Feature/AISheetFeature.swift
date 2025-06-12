@@ -35,6 +35,12 @@ struct AISheetFeature: Reducer {
         case aiResponse(Result<String, Error>)
         case getEncodeData(String)
         case aiAnalyzeSave(String)
+        
+        case delegate(DelegateAction)
+    }
+    
+    enum DelegateAction {
+        case saveAnalyze
     }
     
     @Dependency(\.firebaseAIService) var firebaseAIService
@@ -223,7 +229,10 @@ struct AISheetFeature: Reducer {
                         print("AI 분석 결과 저장 실패: \(error.localizedDescription)")
                     }
                 }
+                await send(.delegate(.saveAnalyze))
             }
+        case .delegate(_):
+            return .none
         }
     }
 }

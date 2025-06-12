@@ -236,6 +236,10 @@ struct DailyNutritionDietInfoFeature {
                 return .send(.loadInfo)
                 
             case .aiSheetAction(.dismiss):
+                state.aiSheet = nil
+                return .none
+                
+            case .aiSheetAction(.presented(.delegate(.saveAnalyze))):
                 state.showAlertToast = true
                 state.toastTitle = "분석 내용을 저장하였습니다."
                 return .run { send in
