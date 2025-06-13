@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import AlertToast
 import ComposableArchitecture
 
@@ -93,6 +94,8 @@ struct CreateDietFeature {
         case foodItemRowTapped(FoodNutritionItem)
         case addCustomFoodTapped
         case sectionToggled(id: UUID)
+        
+        case permissionDenied(shouldShowAlert: Bool)
 
         case addFoodSheet(PresentationAction<AddFoodFeature.Action>)
         case addCustomFoodSheet(PresentationAction<AddCustomFoodFeature.Action>)
@@ -293,6 +296,11 @@ struct CreateDietFeature {
                 
             case .sectionToggled(let id):
                 state.sectionStates[id, default: true].toggle()
+                return .none
+
+            case .permissionDenied(shouldShowAlert: _):
+                // ScannerViewController에서 직접 alert를 처리하므로 여기서는 sheet만 닫음
+                state.scanner = nil
                 return .none
                 
             case .addFoodSheet(.presented(.delegate(let addFoodDelegateAction))):

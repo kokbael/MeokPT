@@ -198,10 +198,14 @@ struct CreateDietView: View {
             print("Scanner Error: \(error.localizedDescription)")
             store.send(.scannerSheet(.dismiss))
         }
+        let onPermissionDenied: (Bool) -> Void = { shouldShowAlert in
+            store.send(.permissionDenied(shouldShowAlert: shouldShowAlert))
+        }
         
         return CameraScannerView(
             didFindCode: onFoundCode,
-            didFailScanning: onFailScanning
+            didFailScanning: onFailScanning,
+            didPermissionDenied: onPermissionDenied
         )
     }
 }
