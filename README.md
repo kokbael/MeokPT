@@ -1,115 +1,68 @@
-****
-# MeokPT – 식단 관리 애플리케이션
+# MeokPT
 
-![Image](https://github.com/user-attachments/assets/9d80ae5b-ce4b-44b3-9f91-ba3e1920a4e2)
+<img src="https://github.com/user-attachments/assets/aae3a32e-26c6-448a-b60c-82ed6d454b6e" width="25%"/>
 
-> **프로젝트 기간**: 2025.04.28 ~ 2025.06.16  
-> **팀원 구성:** 5명  
+### 식단을 생성하고 분석하는 식단 관리 앱
 
+### 식단 생성
+- 식약처 DB에서 음식 검색 후 추가
+- 직접 입력 후 음식 추가
+  
+### 식단 분석
+- 한 눈에 보는 영양성분 차트
+- AI 식단 분석
+  
+### 커뮤니티
+- 사용자 간 식단 공유
+- 내 식단 리스트에 저장
+  
+### 마이페이지
+- 저장한 AI 분석자료 조회
+- 신체 정보 입력 후 적정 하루 섭취량 자동 계산
+- 하루 섭취량 직접 설정
 
+ ## 기획 배경
+기존의 식단 기록 앱은,
+- 임의의 유저가 등록한 음식은 영양성분의 정확도가 떨어질 수 있음
+- 식단 기록이 메인이며, 식단을 분석하여 개선 방안 찾기에는 역부족
 
-## 프로젝트 개요
+이러한 문제를 해결하기 위해,<br>
+**MeokPT는 식약처 공식 데이터와 AI 분석 기능**을 결합하였습니다. 누구나 쉽고 정확하게 식단을 관리할 수 있는 플랫폼을 제공합니다.
 
-**MeokPT**는 사용자의 건강한 식습관 유지를 돕는 **식단 관리 애플리케이션**입니다.
-
-- **식약처 API**로 음식의 영양 정보를 정확하게 제공  
-- **AI 기반 분석**으로 개인 맞춤형 식단 피드백 지원  
-- **이메일, Apple, Kakao 로그인**으로 간편한 접근성 제공  
-- **커뮤니티 기능**을 통해 사용자 간 정보 공유 및 소통 가능  
-
-
-## 기획 배경 및 개발 동기
-
-현대인들은 바쁜 일상 속에서 불규칙한 식사와 영양 불균형에 시달리기 쉽습니다.  
-**MeokPT는 “지속 가능하고 쉽게 실천 가능한 식단 관리”를 목표로** 기획되었습니다.  
-누구나 간편하게 자신의 식습관을 기록하고, 객관적인 영양 정보를 바탕으로 건강을 챙길 수 있도록 돕고자 했습니다.
-
-
-## 해결하고자 한 문제
-- 정확한 영양 정보 접근의 어려움
-- 자기 식단이 건강한지 판단하기 어려움
-- 기록은 하지만 분석이나 피드백은 부족한 앱이 대부분
-
-MeokPT는 이러한 문제를 해결하기 위해, **식약처 API와 AI 분석**를 결합해  
-사용자가 주체적으로 식습관을 점검하고 관리할 수 있도록 설계되었습니다.
-
-
-
-## 프로젝트의 차별점
-- AI 피드백 기반 식단 분석 기능
-- 신체 정보 기반 맞춤 영양소 계산 및 시각화 제공
-- SwiftData 기반의 로컬 데이터 영속성 및 사용자 경험 향상
-
-
-## 주요 기능
-
-- **다양한 로그인 옵션**  
-  - 이메일, Apple, Kakao 로그인 지원  
-- **음식 영양 성분 탐색**  
-  - 식약처 API를 통한 영양소 검색 기능  
-- **AI 분석 피드백**  
-  - 식단의 특정 영양소 과부족 여부 분석 및 피드백  
-- **개인 맞춤 영양소 계산**  
-  - 신체 정보 기반 적정 섭취량 계산 및 비교  
-- **커뮤니티 기능**  
-  - 사용자 간 식단 공유 및 정보 교류 공간 제공  
-
----
-
-## 기술 스택
-
-| 영역              | 사용 기술                                |
-|------------------|------------------------------------------|
-| **Frontend**     | `SwiftUI`                                |
-| **State 관리**   | `TCA (The Composable Architecture)`       |
-| **Database**     | `SwiftData`                              |
-| **설정 관리**    | `Tuist`                                  |
-
----
-
-## 개발 프로세스
-
-- **UI/UX 설계**  
-  - Figma를 사용해 프로토타입 제작 및 피드백 기반 반복 개선  
-- **기능 구현 & 분업**  
-  - 로그인 / 탭 바 / 화면별 기능을 분담해 개발  
-- **코드 관리**  
-  - GitHub PR 기반 코드 리뷰와 머지 진행  
-
----
-
-## UI 미리보기
+## 화면 구성
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/6568b83e-9862-4d45-a8c5-81febf755ecc" width="23%" style="margin: 4px;" />
-  <img src="https://github.com/user-attachments/assets/eaaad029-b489-4966-a98a-ce5dce6ad53f" width="23%" style="margin: 4px;" />
-  <img src="https://github.com/user-attachments/assets/7bd15aa4-aed8-4c2a-9a1c-d935998d2e4f" width="23%" style="margin: 4px;" />
-  <img src="https://github.com/user-attachments/assets/88f04aa6-7993-4040-bad3-19511ac4c564" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/8de97bb3-5202-4cdc-8eeb-cbee8b8af8db" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/0225375b-ff00-4cee-9020-54d7706da931" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/c7caa548-7276-4069-b8b3-3d891c337ddc" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/79749748-d75e-4546-b732-e52bc5668597" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/75baa252-5a4c-4ba0-8a72-d53fc2e05d8e" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/7e88c34d-01e6-41ae-a96a-e4a240d57efc" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/1f588a2d-a67e-44cb-8cde-e87662a23b86" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/00126f17-dba9-49d9-9c42-30d1a98e6ad0" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/872f4956-73b4-4931-957b-8ce39dc10876" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/85a6df97-086b-4fa3-a364-f8f553a7cf79" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/764beb0e-f639-4486-b5d4-13d10af3bb86" width="23%" style="margin: 4px;" />
+<img src="https://github.com/user-attachments/assets/eff565f5-5da2-4919-b2ab-87f34b47933c" width="23%" style="margin: 4px;" />
 </div>
 
+## 개발 환경
+- **Swift:** 6.1
+- **Xcode:** 16.3
+- **iOS:** 17.6
 
----
+## 기술 스택
+- **Framework:** SwiftUI
+- **Backend:** SwiftData, Firebase(Firestore, Authentication, Storage, AI)
+- **State Management:** TCA(The Composable Architecture)
+- **Project Management:** Tuist
 
-## 팀원 소개
+## 협업 도구
+- Notion
+- Figma
+- Discord
 
-| 이름     | 역할                                                                 |
-|----------|----------------------------------------------------------------------|
-| **김동영** | 프로젝트 관리, 커뮤니티 탭 구현, 로그인 기능 개발, API 연동, SwiftData 기반 식단 저장 로직 구현       |
-| **김이현** | 마이페이지 탭 구현, 다크모드 지원                                 |
-| **변영찬** |                                                                      |
-| **윤영서** | 식단 기록 탭 구성, 식단 관리 (SwiftData)                            |
-| **최시온** | 분석 탭 구현, AI 분석 연동 및 프롬프트 작성, 영양성분 계산 로직 및 섭취 데이터 시각화     |
-
----
-
-## 배운 점
-
-- **TCA를 이용한 상태 관리와 모듈화 경험**  
-  - 복잡한 기능을 구조적으로 나누어 유지보수가 쉬운 구조 설계  
-- **AI 연동 및 데이터 시각화 경험**  
-  - 사용자 데이터 기반 분석과 UI 반영을 효율적으로 구현  
-- **SwiftData를 활용한 로컬 데이터 관리 학습**  
-  - 실시간 반영 및 영속성 처리 경험  
-- **팀 내 원활한 소통과 깃 기반 협업 경험**  
-  - PR 리뷰를 통한 코드 품질 향상과 커뮤니케이션 역량 강화  
-
+## 팀 구성
+|김동영|김이현|변영찬|윤영서|최시온|
+| - | - | - | - | - |
+| [@kobael](https://github.com/kokbael) | [@rladlgus](https://github.com/rladlgus) | [@ycbyun](https://github.com/ycbyun) | [@aCafela-coffee](https://github.com/aCafela-coffee) | [@sion0104](https://github.com/sion0104) |
