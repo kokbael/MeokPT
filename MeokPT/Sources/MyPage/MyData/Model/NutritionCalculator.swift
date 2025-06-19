@@ -25,6 +25,7 @@ func calculateBMI(weightKg: Double, heightCm: Double) -> Double {
 }
 
 func calculateBMR(gender: Gender, weight: Double, height: Double, age: Int) -> Double {
+    // Mifflin-St Jeor 공식 사용
     if gender == Gender.male {
         return 10 * weight + 6.25 * height - 5 * Double(age) + 5
     } else {
@@ -37,36 +38,35 @@ func calculateTDEE(bmr: Double, activityLevel: ActivityLevel) -> Double {
 }
 
 func adjustCalories(for gender: Gender, goal: Goal, tdee: Double, bmr: Double, bmi: Double) -> Double {
-    var bmiCategoryFactor: Double = 1.0
-
     switch goal {
     case .loseWeight:
-        let baseDeficitPercent = gender == .female ? 0.15 : 0.20
+        // 체중 감량: 고정된 칼로리 적자
+        let deficit: Double
         if bmi < 18.5 {
-            bmiCategoryFactor = 0.25
+            deficit = 200  // 저체중일 때는 적은 적자
         } else if bmi < 25.0 {
-            bmiCategoryFactor = 0.8
+            deficit = 500  // 정상체중
         } else if bmi < 30.0 {
-            bmiCategoryFactor = 1.0
+            deficit = 600  // 과체중
         } else {
-            bmiCategoryFactor = 1.1
+            deficit = 700  // 비만
         }
-        let targetDeficit = tdee * baseDeficitPercent * bmiCategoryFactor
-        let proposedCalories = tdee - targetDeficit
         
-        let minimumCalories = gender == .female ? max(bmr, 1200.0) : max(bmr, 1500.0)
+        let proposedCalories = tdee - deficit
+        
+        // 최소 칼로리 제한
+        let minimumCalories = gender == .female ? 1200.0 : 1500.0
         
         return max(proposedCalories, minimumCalories)
         
     case .gainMuscle:
-        let baseSurplusPercent = gender == .female ? 0.10 : 0.12
-        if bmi < 18.5 { bmiCategoryFactor = 1.25 }
-        else if bmi < 25.0 { bmiCategoryFactor = 1.0 }
-        else { bmiCategoryFactor = 0.75 }
+        // 근육 증가: 200-400 칼로리 잉여
+        let surplus: Double
+        if bmi < 18.5 { surplus = 400 }
+        else if bmi < 25.0 { surplus = 300 }
+        else { surplus = 200 }
         
-        let targetSurplus = tdee * baseSurplusPercent * bmiCategoryFactor
-        let proposedCalories = tdee + targetSurplus
-        return proposedCalories
+        return tdee + surplus
         
     case .maintainWeight:
         return tdee
@@ -81,58 +81,79 @@ func getRatios(for gender: Gender, goal: Goal, bmi: Double) -> NutrientRatios {
 
     switch goal {
     case .loseWeight:
+        // 체중 감량 시 단백질 비율을 높여 근육량 보존
         if bmi < 18.5 {
             carbP = 0.45; proteinP = 0.25; fatP = 0.30
         } else if bmi < 25.0 {
-            carbP = 0.40; proteinP = 0.30; fatP = 0.30
-        } else if bmi < 30.0 {
-            carbP = 0.38; proteinP = 0.32; fatP = 0.30
-            fiberG += 2.5
-        } else {
             carbP = 0.35; proteinP = 0.35; fatP = 0.30
+        } else if bmi < 30.0 {
+            carbP = 0.30; proteinP = 0.40; fatP = 0.30
             fiberG += 5.0
+        } else {
+            carbP = 0.25; proteinP = 0.45; fatP = 0.30
+            fiberG += 8.0
         }
 
     case .gainMuscle:
+        // 근육 증가 시 탄수화물과 단백질 충분히 공급
         if bmi < 18.5 {
-            carbP = 0.50; proteinP = 0.25; fatP = 0.25
+            carbP = 0.50; proteinP = 0.30; fatP = 0.20
         } else if bmi < 25.0 {
             carbP = gender == .female ? 0.45 : 0.50
-            proteinP = 0.25
-            fatP = gender == .female ? 0.30 : 0.25
+            proteinP = 0.30
+            fatP = gender == .female ? 0.25 : 0.20
         } else {
             carbP = gender == .female ? 0.40 : 0.45
-            proteinP = 0.30
-            fatP = gender == .female ? 0.30 : 0.25
-            fiberG += 2.5
+            proteinP = 0.35
+            fatP = gender == .female ? 0.25 : 0.20
+            fiberG += 3.0
         }
         
     case .maintainWeight:
+        // 유지 시 균형잡힌 비율
         if bmi < 18.5 {
-            carbP = gender == .female ? 0.50 : 0.52
-            proteinP = 0.20
-            fatP = gender == .female ? 0.30 : 0.28
-        } else if bmi < 25.0 {
-            carbP = 0.50; proteinP = 0.20; fatP = 0.30
-        } else {
-            carbP = gender == .female ? 0.45 : 0.48
+            carbP = gender == .female ? 0.50 : 0.55
             proteinP = 0.25
-            fatP = gender == .female ? 0.30 : 0.27
-            fiberG += 2.5
+            fatP = gender == .female ? 0.25 : 0.20
+        } else if bmi < 25.0 {
+            carbP = 0.50; proteinP = 0.25; fatP = 0.25
+        } else {
+            carbP = gender == .female ? 0.45 : 0.50
+            proteinP = 0.30
+            fatP = gender == .female ? 0.25 : 0.20
+            fiberG += 3.0
         }
     }
     
+    // 비율 합계가 1.0이 되도록 조정
     let sumCheck = carbP + proteinP + fatP
     if abs(sumCheck - 1.0) > 0.001 {
-        if sumCheck > 1.0 {
-            carbP -= (sumCheck - 1.0)
-        } else {
-            carbP += (1.0 - sumCheck)
-        }
-        if carbP < 0 { carbP = 0 }
+        let adjustment = (1.0 - sumCheck) / 3.0
+        carbP += adjustment
+        proteinP += adjustment
+        fatP += adjustment
     }
 
     return NutrientRatios(carbPercent: carbP, proteinPercent: proteinP, fatPercent: fatP, fiberGrams: fiberG)
+}
+
+func calculateProteinRequirement(weightKg: Double, goal: Goal, activityLevel: ActivityLevel) -> Double {
+    // 체중 기반 단백질 요구량 계산 (g/kg)
+    var proteinPerKg: Double
+    
+    switch goal {
+    case .loseWeight:
+        // 체중 감량 시: 1.6-2.0g/kg (근육량 보존)
+        proteinPerKg = activityLevel.rawValue >= 1.55 ? 2.0 : 1.6
+    case .gainMuscle:
+        // 근육 증가 시: 1.8-2.2g/kg
+        proteinPerKg = activityLevel.rawValue >= 1.55 ? 2.2 : 1.8
+    case .maintainWeight:
+        // 유지 시: 1.2-1.6g/kg
+        proteinPerKg = activityLevel.rawValue >= 1.55 ? 1.6 : 1.2
+    }
+    
+    return weightKg * proteinPerKg
 }
 
 func calculateNutrition(weight: Double, height: Double, age: Int, gender: Gender, goal: Goal, activityLevel: ActivityLevel) -> NutritionValues {
@@ -146,11 +167,21 @@ func calculateNutrition(weight: Double, height: Double, age: Int, gender: Gender
     let adjustedCalories = adjustCalories(for: gender, goal: goal, tdee: tdee, bmr: bmr, bmi: bmi)
     let ratios = getRatios(for: gender, goal: goal, bmi: bmi)
     
-    let proteinGrams = (adjustedCalories * ratios.proteinPercent) / 4.0
-    let fatGrams = (adjustedCalories * ratios.fatPercent) / 9.0
-    let carbsGrams = (adjustedCalories * ratios.carbPercent) / 4.0
+    // 체중 기반 단백질 계산 우선 사용
+    let proteinGrams = calculateProteinRequirement(weightKg: weightKg, goal: goal, activityLevel: activityLevel)
     
-    let sugarGrams = (adjustedCalories * 0.1) / 4.0
+    // 단백질 칼로리를 제외한 나머지 칼로리로 탄수화물과 지방 계산
+    let proteinCalories = proteinGrams * 4.0
+    let remainingCalories = adjustedCalories - proteinCalories
+    let fatCalorieRatio = ratios.fatPercent / (ratios.carbPercent + ratios.fatPercent)
+    
+    let fatGrams = (remainingCalories * fatCalorieRatio) / 9.0
+    let carbsGrams = (remainingCalories * (1.0 - fatCalorieRatio)) / 4.0
+    
+    // 당분은 총 탄수화물의 10% 이하로 제한
+    let sugarGrams = min(carbsGrams * 0.1, 50.0) // WHO 권장: 하루 50g 이하
+    
+    // 나트륨: 성인 권장량 2300mg, 목표 1500mg
     let sodiumMilligrams = 1500.0
     
     return NutritionValues(
@@ -180,39 +211,13 @@ func calculateNutritionForIdealWeight(
     
     let idealWeight = calculateIdealWeight(heightCm: heightCm, targetBMI: targetBMIForIdealWeight)
     
-    let bmrForIdealWeight = calculateBMR(gender: gender, weight: idealWeight, height: heightCm, age: age)
-    let tdeeForIdealWeight = calculateTDEE(bmr: bmrForIdealWeight, activityLevel: activityLevel)
-    let bmiForIdealWeight = calculateBMI(weightKg: idealWeight, heightCm: heightCm)
-
-    let adjustedCalories = adjustCalories(
-        for: gender,
+    return calculateNutrition(
+        weight: idealWeight,
+        height: heightCm,
+        age: age,
+        gender: gender,
         goal: .maintainWeight,
-        tdee: tdeeForIdealWeight,
-        bmr: bmrForIdealWeight,
-        bmi: bmiForIdealWeight
-    )
-
-    let ratios = getRatios(
-        for: gender,
-        goal: .maintainWeight,
-        bmi: bmiForIdealWeight
-    )
-
-    let proteinGrams = (adjustedCalories * ratios.proteinPercent) / 4.0
-    let fatGrams = (adjustedCalories * ratios.fatPercent) / 9.0
-    let carbsGrams = (adjustedCalories * ratios.carbPercent) / 4.0
-    
-    let sugarGrams = (adjustedCalories * 0.1) / 4.0
-    let sodiumMilligrams = 1500.0
-    
-    return NutritionValues(
-        calories: adjustedCalories,
-        carbs: carbsGrams,
-        protein: proteinGrams,
-        fat: fatGrams,
-        fiber: ratios.fiberGrams,
-        sugar: sugarGrams,
-        sodium: sodiumMilligrams
+        activityLevel: activityLevel
     )
 }
 
