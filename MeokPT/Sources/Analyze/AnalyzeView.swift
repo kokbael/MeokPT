@@ -16,9 +16,18 @@ struct AnalyzeView: View {
                         )
                     }
                 }
-                .padding(24)
+                .padding(.horizontal,24)
+                .padding(.vertical,8)
             }
-            .navigationTitle("일일 섭취량 분석")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button (action: {  }) {
+                        Image(systemName: "plus")
+                            .foregroundStyle(Color("AppSecondaryColor"))
+                    }
+                }
+            }
+            .navigationTitle("식단 분석")
             .navigationBarTitleDisplayMode(.inline)
             .background(Color("AppBackgroundColor"))
         }
@@ -29,6 +38,7 @@ private struct ChartView: View {
     let nutrient: Nutrient
     let maxValue: Double
     let barColor: Color
+    var progress: Double { nutrient.value / maxValue }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -36,13 +46,15 @@ private struct ChartView: View {
                 Text(nutrient.label)
                     .font(.headline)
                 Spacer()
-                Text(String(format: "%.0f / %.0f %@", nutrient.value, maxValue, nutrient.unit))
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                HStack {
+                    Text(String(format: "%.0f %@", nutrient.value, nutrient.unit))
+                        .foregroundStyle(.primary).bold()
+                    Text("/")
+                    Text(String(format: "%.0f %@", maxValue, nutrient.unit))
+                        .foregroundColor(.secondary)
+                }
+                .font(.subheadline)
             }
-            
-            let progress = nutrient.value / maxValue
-            
             Rectangle()
                 .fill(Color(UIColor.systemGray5))
                 .overlay(alignment: .leading) {
