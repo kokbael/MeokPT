@@ -21,7 +21,9 @@ struct AnalyzeView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button (action: {  }) {
+                    Button (action: {
+                        store.send(.presentAnalyzeAddDietSheet)
+                    }) {
                         Image(systemName: "plus")
                             .foregroundStyle(Color("AppSecondaryColor"))
                     }
@@ -30,6 +32,13 @@ struct AnalyzeView: View {
             .navigationTitle("식단 분석")
             .navigationBarTitleDisplayMode(.inline)
             .background(Color("AppBackgroundColor"))
+            .sheet(item: $store.scope(state: \.analyzeAddDietSheet, action: \.analyzeAddDietAction)) { store in
+                NavigationStack {
+                    AnalyzeAddDietView(store: store)
+                        .presentationDragIndicator(.visible)
+                        .presentationDetents([.large])
+                }
+            }
         }
     }
 }

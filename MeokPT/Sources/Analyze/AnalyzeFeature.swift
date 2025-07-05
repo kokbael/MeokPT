@@ -63,10 +63,15 @@ struct AnalyzeFeature {
                 return AnalyzeData(nutrient: nutrient, maxValue: maxValue, barColor: barColor)
             }
         }
+        
+        @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
     }
     
-    enum Action: Equatable {
+    enum Action: BindableAction {
+        case presentAnalyzeAddDietSheet
+        case binding(BindingAction<State>)
         case delegate(DelegateAction)
+        case analyzeAddDietAction(PresentationAction<AnalyzeAddDietFeature.Action>)
     }
     
     enum DelegateAction {
@@ -74,11 +79,24 @@ struct AnalyzeFeature {
     }
 
     var body: some ReducerOf<Self> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
+            case .presentAnalyzeAddDietSheet:
+                state.analyzeAddDietSheet = AnalyzeAddDietFeature.State()
+                return .none
+                
+            case .analyzeAddDietAction(_):
+                return .none
+                
             case .delegate(_):
                 return .none
+            case .binding(_):
+                return .none
             }
+        }
+        .ifLet(\.$analyzeAddDietSheet, action: \.analyzeAddDietAction) {
+            AnalyzeAddDietFeature()
         }
     }
 }
