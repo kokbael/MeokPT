@@ -10,8 +10,6 @@ import ComposableArchitecture
 
 struct AnalyzeAddDietView: View {
     @Bindable var store: StoreOf<AnalyzeAddDietFeature>
-    @State private var selectedDietIDs: [UUID] = []
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         dietList
@@ -25,7 +23,7 @@ struct AnalyzeAddDietView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     Button {
-                        dismiss()
+                        store.send(.delegate(.dismissSheet))
                     } label: {
                         Text("취소")
                     }
@@ -47,10 +45,9 @@ struct AnalyzeAddDietView: View {
                             Image(systemName: store.isFavoriteFilterActive ? "heart.fill" : "heart")
                         }
                         Button {
-                            
-                            dismiss()
+                            store.send(.addButtonTapped)
                         } label: {
-                            Text("추가 \(selectedDietIDs.count)")
+                            Text("추가 \(store.selectedDietIDs.count)")
                                 .monospacedDigit()
                         }
                     }
@@ -62,13 +59,13 @@ struct AnalyzeAddDietView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(store.currentDietList) { diet in
-                    AnalyzeDietCell(diet: diet, isSelected: selectedDietIDs.contains(diet.id))
+                    AnalyzeDietCell(diet: diet, isSelected: store.selectedDietIDs.contains(diet.id))
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            if let index = selectedDietIDs.firstIndex(of: diet.id) {
-                                selectedDietIDs.remove(at: index)
+                            if let index = store.selectedDietIDs.firstIndex(of: diet.id) {
+                                store.selectedDietIDs.remove(at: index)
                             } else {
-                                selectedDietIDs.append(diet.id)
+                                store.selectedDietIDs.append(diet.id)
                             }
                         }
                 }

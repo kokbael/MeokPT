@@ -33,6 +33,9 @@ struct AnalyzeAddDietFeature {
                 return favoriteFilteredDiets.sorted { $0.title.compare($1.title) == .orderedAscending }
             }
         }
+        
+        var selectedDietIDs: [UUID] = []
+        
     }
     
     enum Action: BindableAction {
@@ -40,12 +43,13 @@ struct AnalyzeAddDietFeature {
         case binding(BindingAction<State>)
         case onAppear
         case dietsLoaded([Diet])
-//        case dietCellTapped(id: UUID)
+        case addButtonTapped
         case favoriteFilterButtonTapped
     }
     
     enum DelegateAction: Equatable {
-        case selectDiet(diet: Diet)
+        case dismissSheet
+        case addDiets([Diet])
     }
 
     
@@ -76,11 +80,9 @@ struct AnalyzeAddDietFeature {
                 state.dietList = IdentifiedArrayOf(uniqueElements: diets)
                 return .none
                 
-//            case let .dietCellTapped(id):
-//                if let diet = state.dietList[id: id] {
-//                    return .send(.delegate(.selectDiet(diet: diet)))
-//                }
-//                return .none
+            case .addButtonTapped:
+                let selectedDiets = state.currentDietList.filter { state.selectedDietIDs.contains($0.id) }
+                return .send(.delegate(.addDiets(selectedDiets)))
                 
             case .favoriteFilterButtonTapped:
                 state.isFavoriteFilterActive.toggle()

@@ -21,6 +21,7 @@ struct AnalyzeData: Identifiable, Equatable {
 struct AnalyzeFeature {
     @ObservableState
     struct State: Equatable {
+        var isExpanded: Bool = false
         var currentNutrients: [Nutrient] = [
             .init(label: "열량", value: 2100, unit: "kcal"),
             .init(label: "탄수화물", value: 250, unit: "g"),
@@ -64,14 +65,18 @@ struct AnalyzeFeature {
             }
         }
         
+        var selectedDiets: [Diet] = []
+        
         @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
     }
     
     enum Action: BindableAction {
+        case chartAreaTapped
         case presentAnalyzeAddDietSheet
         case binding(BindingAction<State>)
         case delegate(DelegateAction)
         case analyzeAddDietAction(PresentationAction<AnalyzeAddDietFeature.Action>)
+        case dismissSheet
     }
     
     enum DelegateAction {
@@ -82,11 +87,24 @@ struct AnalyzeFeature {
         BindingReducer()
         Reduce { state, action in
             switch action {
+            case .chartAreaTapped:
+                state.isExpanded.toggle()
+                return .none
+                
             case .presentAnalyzeAddDietSheet:
                 state.analyzeAddDietSheet = AnalyzeAddDietFeature.State()
                 return .none
                 
-            case .analyzeAddDietAction(.dismiss):
+            case .analyzeAddDietAction(.presented(.delegate(.dismissSheet))):
+                return .send(.dismissSheet)
+                
+            case .analyzeAddDietAction(.presented(.delegate(.addDiets(let diets)))):
+                state.selectedDiets.append(contentsOf: diets)
+                return .run { send in
+                    await send(.dismissSheet)
+                }
+                
+            case .dismissSheet:
                 state.analyzeAddDietSheet = nil
                 return .none
                 
