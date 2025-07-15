@@ -100,7 +100,23 @@ struct AnalyzeView: View {
                 // .easeInOut: 천천히 시작하고 천천히 끝남 (기본값 중 하나)
                 // .linear: 일정한 속도
                 // .spring: 용수철처럼 통통 튀는 효과 (duration, bounce 등 파라미터 조절 가능)
-                .animation(.linear(duration: 0.3), value: store.isExpanded)
+                .animation(store.isExpanded ? .linear(duration: 0.3) : .none, value: store.isExpanded)
+                
+                // 추가된 식단 리스트 표시
+                if !store.selectedDiets.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("선택된 식단")
+                            .font(.title2.bold())
+                            .padding(.horizontal, 24)
+                            .padding(.top, 16)
+
+                        ForEach(store.selectedDiets) { entry in
+                            AnalyzeSelectedDietCell(diet: entry.diet)
+                                .padding(.horizontal, 24)
+                        }
+                    }
+                    .padding(.bottom, 24)
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -149,10 +165,10 @@ private struct ChartView: View {
                     Text(nutrient.label).bold()
                     Spacer()
                     HStack {
-                        Text(String(format: "%.0f %@", nutrient.value, nutrient.unit))
+                        Text("\(nutrient.value.formattedWithSeparator) \(nutrient.unit)")
                             .foregroundStyle(.primary).bold()
                         Text("/")
-                        Text(String(format: "%.0f %@", maxValue, nutrient.unit))
+                        Text("\(maxValue.formattedWithSeparator) \(nutrient.unit)")
                             .foregroundColor(.secondary)
                     }
                     .font(.subheadline)
@@ -164,10 +180,10 @@ private struct ChartView: View {
                 VStack {
                     Text(nutrient.label).bold()
                     HStack {
-                        Text(String(format: "%.0f %@", nutrient.value, nutrient.unit))
+                        Text("\(nutrient.value.formattedWithSeparator) \(nutrient.unit)")
                             .foregroundStyle(.primary).bold()
                         Text("/")
-                        Text(String(format: "%.0f %@", maxValue, nutrient.unit))
+                        Text("\(maxValue.formattedWithSeparator) \(nutrient.unit)")
                             .foregroundColor(.secondary)
                     }
                     .font(.caption)
@@ -188,7 +204,7 @@ private struct ChartView: View {
                 }
                 .frame(height: 20)
                 .clipped()
-                .animation(.spring(), value: nutrient.value)
+                .animation(.spring(duration: 1.0), value: nutrient.value)
         }
         .background(Color(UIColor.secondarySystemGroupedBackground))
         .cornerRadius(12)

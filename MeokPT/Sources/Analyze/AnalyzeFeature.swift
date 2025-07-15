@@ -17,20 +17,55 @@ struct AnalyzeData: Identifiable, Equatable {
     var id: String { nutrient.id }
 }
 
+struct SelectedDiet: Identifiable, Equatable {
+    let id: UUID
+    let diet: Diet
+    let foods: [Food]
+    
+    init(id: UUID = UUID(), diet: Diet) {
+        self.id = id
+        self.diet = diet
+        self.foods = diet.foods
+    }
+}
+
 @Reducer
 struct AnalyzeFeature {
     @ObservableState
     struct State: Equatable {
         var isExpanded: Bool = false
-        var currentNutrients: [Nutrient] = [
-            .init(label: "열량", value: 2100, unit: "kcal"),
-            .init(label: "탄수화물", value: 250, unit: "g"),
-            .init(label: "단백질", value: 150, unit: "g"),
-            .init(label: "지방", value: 80, unit: "g"),
-            .init(label: "식이섬유", value: 25, unit: "g"),
-            .init(label: "당류", value: 60, unit: "g"),
-            .init(label: "나트륨", value: 1800, unit: "mg")
-        ]
+        var selectedDiets: [SelectedDiet] = []
+        var currentNutrients: [Nutrient] {
+            var totalKcal: Double = 0
+            var totalCarbohydrate: Double = 0
+            var totalProtein: Double = 0
+            var totalFat: Double = 0
+            var totalDietaryFiber: Double = 0
+            var totalSugar: Double = 0
+            var totalSodium: Double = 0
+            
+            for diet in selectedDiets {
+                for food in diet.foods {
+                    totalKcal += food.kcal
+                    totalCarbohydrate += food.carbohydrate ?? 0
+                    totalProtein += food.protein ?? 0
+                    totalFat += food.fat ?? 0
+                    totalDietaryFiber += food.dietaryFiber ?? 0
+                    totalSugar += food.sugar ?? 0
+                    totalSodium += food.sodium ?? 0
+                }
+            }
+            
+            return [
+                .init(label: "열량", value: totalKcal, unit: "kcal"),
+                .init(label: "탄수화물", value: totalCarbohydrate, unit: "g"),
+                .init(label: "단백질", value: totalProtein, unit: "g"),
+                .init(label: "지방", value: totalFat, unit: "g"),
+                .init(label: "식이섬유", value: totalDietaryFiber, unit: "g"),
+                .init(label: "당류", value: totalSugar, unit: "g"),
+                .init(label: "나트륨", value: totalSodium, unit: "mg")
+            ]
+        }
         
         var maxValues: [String: Double] = [
             "열량": 2400,
@@ -64,8 +99,6 @@ struct AnalyzeFeature {
                 return AnalyzeData(nutrient: nutrient, maxValue: maxValue, barColor: barColor)
             }
         }
-        
-        var selectedDiets: [Diet] = []
         
         @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
     }

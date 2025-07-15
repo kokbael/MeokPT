@@ -49,7 +49,7 @@ struct AnalyzeAddDietFeature {
     
     enum DelegateAction: Equatable {
         case dismissSheet
-        case addDiets([Diet])
+        case addDiets([SelectedDiet])
     }
 
     
@@ -81,7 +81,9 @@ struct AnalyzeAddDietFeature {
                 return .none
                 
             case .addButtonTapped:
-                let selectedDiets = state.currentDietList.filter { state.selectedDietIDs.contains($0.id) }
+                let selectedDiets = state.currentDietList.filter { state.selectedDietIDs.contains($0.id) }.map { diet in
+                    SelectedDiet(diet: diet)
+                }
                 return .send(.delegate(.addDiets(selectedDiets)))
                 
             case .favoriteFilterButtonTapped:

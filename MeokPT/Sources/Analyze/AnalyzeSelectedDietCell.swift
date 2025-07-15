@@ -1,16 +1,7 @@
-//
-//  AnalyzeDietCell.swift
-//  MeokPT
-//
-//  Created by 김동영 on 7/5/25.
-//
-
 import SwiftUI
 
-struct AnalyzeDietCell: View {
+struct AnalyzeSelectedDietCell: View {
     var diet: Diet
-    var isSelected: Bool
-    
     var body: some View {
         VStack(spacing: 10) {
             VStack(alignment: .leading) {
@@ -19,9 +10,6 @@ struct AnalyzeDietCell: View {
                         .font(.title3.bold())
                         .lineLimit(1)
                     Spacer()
-                    Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-                        .font(.title2)
-                        .foregroundStyle(Color("AppSecondaryColor"))
                 }
                 Spacer().frame(height: 4)
                 if (diet.foods.isEmpty) {
@@ -41,7 +29,7 @@ struct AnalyzeDietCell: View {
             }
         }
         .padding(24)
-        .background(isSelected ? Color("AppSecondaryColor").opacity(0.2) : Color(UIColor.secondarySystemGroupedBackground))
+        .background(Color(UIColor.secondarySystemGroupedBackground))
         .cornerRadius(20)
         .overlay(
             RoundedRectangle(cornerRadius: 20)
