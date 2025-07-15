@@ -11,7 +11,8 @@ import ComposableArchitecture
 struct AnalyzeAddDietView: View {
     @Bindable var store: StoreOf<AnalyzeAddDietFeature>
     @State private var selectedDietIDs: [UUID] = []
-    
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         dietList
             .onAppear {
@@ -24,9 +25,9 @@ struct AnalyzeAddDietView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     Button {
-                        store.send(.dismissButtonTapped)
+                        dismiss()
                     } label: {
-                        Text("취소").foregroundStyle(Color("TextButton"))
+                        Text("취소")
                     }
                 }
                 ToolbarItemGroup(placement: .principal) {
@@ -44,14 +45,13 @@ struct AnalyzeAddDietView: View {
                             store.send(.favoriteFilterButtonTapped)
                         } label: {
                             Image(systemName: store.isFavoriteFilterActive ? "heart.fill" : "heart")
-                                .foregroundStyle(Color("TextButton"))
                         }
                         Button {
                             
+                            dismiss()
                         } label: {
                             Text("추가 \(selectedDietIDs.count)")
                                 .monospacedDigit()
-                                .foregroundStyle(Color("TextButton"))
                         }
                     }
                 }
@@ -61,7 +61,7 @@ struct AnalyzeAddDietView: View {
     private var dietList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(/*store.currentDietList*/Diet.dummys) { diet in
+                ForEach(store.currentDietList) { diet in
                     AnalyzeDietCell(diet: diet, isSelected: selectedDietIDs.contains(diet.id))
                         .contentShape(Rectangle())
                         .onTapGesture {

@@ -40,6 +40,7 @@ struct AnalyzeView: View {
                 }
             }
         }
+        .tint(Color("TextButton"))
     }
 }
 

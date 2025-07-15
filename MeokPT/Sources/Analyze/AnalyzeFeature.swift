@@ -86,6 +86,10 @@ struct AnalyzeFeature {
                 state.analyzeAddDietSheet = AnalyzeAddDietFeature.State()
                 return .none
                 
+            case .analyzeAddDietAction(.dismiss):
+                state.analyzeAddDietSheet = nil
+                return .none
+                
             case .analyzeAddDietAction(_):
                 return .none
                 

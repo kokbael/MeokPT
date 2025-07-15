@@ -40,13 +40,11 @@ struct AnalyzeAddDietFeature {
         case binding(BindingAction<State>)
         case onAppear
         case dietsLoaded([Diet])
-        case dietCellTapped(id: UUID)
-        case dismissButtonTapped
+//        case dietCellTapped(id: UUID)
         case favoriteFilterButtonTapped
     }
     
     enum DelegateAction: Equatable {
-        case dismissSheet
         case selectDiet(diet: Diet)
     }
 
@@ -78,14 +76,11 @@ struct AnalyzeAddDietFeature {
                 state.dietList = IdentifiedArrayOf(uniqueElements: diets)
                 return .none
                 
-            case let .dietCellTapped(id):
-                if let diet = state.dietList[id: id] {
-                    return .send(.delegate(.selectDiet(diet: diet)))
-                }
-                return .none
-                
-            case .dismissButtonTapped:
-                return .send(.delegate(.dismissSheet))
+//            case let .dietCellTapped(id):
+//                if let diet = state.dietList[id: id] {
+//                    return .send(.delegate(.selectDiet(diet: diet)))
+//                }
+//                return .none
                 
             case .favoriteFilterButtonTapped:
                 state.isFavoriteFilterActive.toggle()
