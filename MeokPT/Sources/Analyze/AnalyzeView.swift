@@ -12,7 +12,7 @@ struct AnalyzeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: 8) {
                     // --- 차트 섹션 ---
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
@@ -122,39 +122,39 @@ struct AnalyzeView: View {
                             .padding(.top, 16)
                             .padding(.bottom, 12)
 
-                            ForEach(store.selectedDiets) { entry in
-                                HStack(spacing: 12) {
-                                    if store.isEditing {
-                                        // 삭제 버튼
-                                        Button(action: {
-                                            if let index = store.selectedDiets.firstIndex(where: { $0.id == entry.id }) {
-                                                store.send(.delete(at: IndexSet(integer: index)))
+                            VStack(spacing: 0) {
+                                ForEach(store.selectedDiets) { entry in
+                                    HStack(spacing: 12) {
+                                        if store.isEditing {
+                                            Button(action: {
+                                                store.send(.deleteButtonTapped(id: entry.id))
+                                            }) {
+                                                Image(systemName: "minus.circle.fill")
+                                                    .foregroundColor(.red)
+                                                    .font(.title2)
                                             }
-                                        }) {
-                                            Image(systemName: "minus.circle.fill")
-                                                .foregroundColor(.red)
-                                                .font(.title2)
                                         }
+                                        AnalyzeSelectedDietCell(diet: entry.diet)
+                                            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 20))
+                                            .onDrag {
+                                                if store.isEditing {
+                                                    store.send(.setDraggedDiet(entry))
+                                                    return NSItemProvider(object: entry.id.uuidString as NSString)
+                                                }
+                                                return NSItemProvider()
+                                            }
+                                            .wiggle(isWiggling: store.isEditing)
                                     }
-
-                                    AnalyzeSelectedDietCell(diet: entry.diet)
-                                        .opacity(store.draggedDiet?.id == entry.id ? 0.5 : 1.0)
-                                        .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 20))
-                                        .onDrag {
-                                            if store.isEditing {
-                                                store.send(.setDraggedDiet(entry))
-                                                return NSItemProvider(object: entry.id.uuidString as NSString)
-                                            }
-                                            return NSItemProvider()
-                                        }
-                                        .wiggle(isWiggling: store.isEditing)
+                                    .onDrop(of: [.text], delegate: DietDropDelegate(item: entry, draggedItem: $store.draggedDiet, store: store))
+                                    .padding(.horizontal, 24)
+                                    .padding(.bottom, 12)
                                 }
-                                .onDrop(of: [.text], delegate: DietDropDelegate(item: entry, draggedItem: $store.draggedDiet, store: store))
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 12)
-                                .animation(.default, value: store.isEditing)
-                                .animation(.default, value: store.draggedDiet)
+                                if store.isEditing {
+                                    // 삭제했을 때 스크롤이 위로 올라와 애니메이션이 스킵됨을 방지
+                                    Spacer().frame(height: 120)
+                                }
                             }
+                            .animation(.default, value: store.selectedDiets)
                         }
                         .background(Color("AppBackgroundColor"))
                     }

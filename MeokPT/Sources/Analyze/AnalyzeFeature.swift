@@ -104,6 +104,7 @@ struct AnalyzeFeature {
         @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
         var isEditing: Bool = false
         var draggedDiet: SelectedDiet?
+        var deletingItems: Set<UUID> = []
     }
     
     enum Action: BindableAction {
@@ -117,7 +118,7 @@ struct AnalyzeFeature {
         case loadSelectedDiets
         case dietsLoaded([SelectedDiet])
         case editButtonTapped
-        case delete(at: IndexSet)
+        case deleteButtonTapped(id: UUID)
         case move(from: IndexSet, to: Int)
         case setDraggedDiet(SelectedDiet?)
         case moveDiet(from: UUID, to: UUID)
@@ -189,30 +190,27 @@ struct AnalyzeFeature {
             case .editButtonTapped:
                 state.isEditing.toggle()
                 if !state.isEditing {
-                    state.draggedDiet = nil // 편집 모드 종료 시 드래그 상태 초기화
+                    state.draggedDiet = nil
                 }
                 return .none
                 
-            case let .delete(at: offsets):
-                let idsToDelete = offsets.map { state.selectedDiets[$0].id }
+            case let .deleteButtonTapped(id):
+                state.selectedDiets.removeAll { $0.id == id }
                 return .run { send in
                     await MainActor.run {
                         do {
                             let context = modelContainer.mainContext
-                            for id in idsToDelete {
-                                let descriptor = FetchDescriptor<AnalysisSelection>(
-                                    predicate: #Predicate { $0.id == id }
-                                )
-                                if let selectionToDelete = try context.fetch(descriptor).first {
-                                    context.delete(selectionToDelete)
-                                }
+                            let descriptor = FetchDescriptor<AnalysisSelection>(
+                                predicate: #Predicate { $0.id == id }
+                            )
+                            if let selectionToDelete = try context.fetch(descriptor).first {
+                                context.delete(selectionToDelete)
+                                try context.save()
                             }
-                            try context.save()
                         } catch {
                             print("Failed to delete diet selection: \(error)")
                         }
                     }
-                    await send(.loadSelectedDiets)
                 }
                 
             case let .move(from, to):

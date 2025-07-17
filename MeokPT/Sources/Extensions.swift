@@ -19,27 +19,19 @@ extension Double {
 // MARK: - Wiggle Animation Effect
 struct WiggleModifier: ViewModifier {
     let isWiggling: Bool
+    @State private var wigglingState = false
 
     func body(content: Content) -> some View {
-        if isWiggling {
-            TimelineView(.periodic(from: .now, by: 0.6)) { _ in
-                content
-                    .keyframeAnimator(initialValue: Angle.zero) { view, angle in
-                        view.rotationEffect(angle, anchor: .center)
-                    } keyframes: { _ in
-                        KeyframeTrack(\.self) {
-                            LinearKeyframe(.degrees(1.5), duration: 0.1)
-                            LinearKeyframe(.degrees(-1.5), duration: 0.2)
-                            LinearKeyframe(.degrees(1.5), duration: 0.2)
-                            LinearKeyframe(.degrees(0), duration: 0.1)
-                        }
-                    }
+        content
+            .rotationEffect(.degrees(wigglingState ? 1.0 : 0), anchor: .center)
+            .animation(wigglingState ? .easeInOut(duration: 0.15).repeatForever(autoreverses: true) : .spring(duration: 0.3), value: wigglingState)
+            .onAppear {
+                // onAppear is needed to start the animation when the view first appears in an already-editing state
+                wigglingState = isWiggling
             }
-        } else {
-            content
-                .rotationEffect(.zero)
-                .animation(.spring(duration: 0.3), value: isWiggling)
-        }
+            .onChange(of: isWiggling) {
+                wigglingState = isWiggling
+            }
     }
 }
 
