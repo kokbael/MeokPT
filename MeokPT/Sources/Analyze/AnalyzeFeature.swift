@@ -1,5 +1,6 @@
 import SwiftUI
 import ComposableArchitecture
+import SwiftData
 
 // 영양성분 데이터 모델
 struct Nutrient: Identifiable, Equatable {
@@ -22,8 +23,8 @@ struct SelectedDiet: Identifiable, Equatable {
     let diet: Diet
     let foods: [Food]
     
-    init(id: UUID = UUID(), diet: Diet) {
-        self.id = id
+    init(selectionID: UUID, diet: Diet) {
+        self.id = selectionID
         self.diet = diet
         self.foods = diet.foods
     }
@@ -101,25 +102,40 @@ struct AnalyzeFeature {
         }
         
         @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
+        var isEditing: Bool = false
+        var draggedDiet: SelectedDiet?
     }
     
     enum Action: BindableAction {
+        case onAppear
         case chartAreaTapped
         case presentAnalyzeAddDietSheet
         case binding(BindingAction<State>)
         case delegate(DelegateAction)
         case analyzeAddDietAction(PresentationAction<AnalyzeAddDietFeature.Action>)
         case dismissSheet
+        case loadSelectedDiets
+        case dietsLoaded([SelectedDiet])
+        case editButtonTapped
+        case delete(at: IndexSet)
+        case move(from: IndexSet, to: Int)
+        case setDraggedDiet(SelectedDiet?)
+        case moveDiet(from: UUID, to: UUID)
     }
     
     enum DelegateAction {
         case navigateToMyPage
     }
+    
+    @Dependency(\.modelContainer) var modelContainer
 
     var body: some ReducerOf<Self> {
         BindingReducer()
         Reduce { state, action in
             switch action {
+            case .onAppear:
+                return .send(.loadSelectedDiets)
+                
             case .chartAreaTapped:
                 state.isExpanded.toggle()
                 return .none
@@ -131,15 +147,126 @@ struct AnalyzeFeature {
             case .analyzeAddDietAction(.presented(.delegate(.dismissSheet))):
                 return .send(.dismissSheet)
                 
-            case .analyzeAddDietAction(.presented(.delegate(.addDiets(let diets)))):
-                state.selectedDiets.append(contentsOf: diets)
+            case .analyzeAddDietAction(.presented(.delegate(.dietsAdded))):
                 return .run { send in
                     await send(.dismissSheet)
+                    await send(.loadSelectedDiets)
                 }
                 
             case .dismissSheet:
                 state.analyzeAddDietSheet = nil
                 return .none
+                
+            case .loadSelectedDiets:
+                return .run { send in
+                    await MainActor.run {
+                        do {
+                            let context = modelContainer.mainContext
+                            let selectionDescriptor = FetchDescriptor<AnalysisSelection>(sortBy: [SortDescriptor(\.orderIndex)])
+                            let selections = try context.fetch(selectionDescriptor)
+                            
+                            let dietDescriptor = FetchDescriptor<Diet>()
+                            let allDiets = try context.fetch(dietDescriptor)
+                            
+                            let selectedDiets = selections.compactMap { selection -> SelectedDiet? in
+                                if let diet = allDiets.first(where: { $0.id == selection.dietID }) {
+                                    return SelectedDiet(selectionID: selection.id, diet: diet)
+                                }
+                                return nil
+                            }
+                            
+                            send(.dietsLoaded(selectedDiets))
+                        } catch {
+                            print("Failed to load selected diets: \(error)")
+                        }
+                    }
+                }
+                
+            case let .dietsLoaded(diets):
+                state.selectedDiets = diets
+                return .none
+                
+            case .editButtonTapped:
+                state.isEditing.toggle()
+                if !state.isEditing {
+                    state.draggedDiet = nil // 편집 모드 종료 시 드래그 상태 초기화
+                }
+                return .none
+                
+            case let .delete(at: offsets):
+                let idsToDelete = offsets.map { state.selectedDiets[$0].id }
+                return .run { send in
+                    await MainActor.run {
+                        do {
+                            let context = modelContainer.mainContext
+                            for id in idsToDelete {
+                                let descriptor = FetchDescriptor<AnalysisSelection>(
+                                    predicate: #Predicate { $0.id == id }
+                                )
+                                if let selectionToDelete = try context.fetch(descriptor).first {
+                                    context.delete(selectionToDelete)
+                                }
+                            }
+                            try context.save()
+                        } catch {
+                            print("Failed to delete diet selection: \(error)")
+                        }
+                    }
+                    await send(.loadSelectedDiets)
+                }
+                
+            case let .move(from, to):
+                state.selectedDiets.move(fromOffsets: from, toOffset: to)
+                
+                return .run { [selectedDiets = state.selectedDiets] send in
+                    await MainActor.run {
+                        do {
+                            let context = modelContainer.mainContext
+                            for (index, diet) in selectedDiets.enumerated() {
+                                let selectionID = diet.id
+                                let descriptor = FetchDescriptor<AnalysisSelection>(predicate: #Predicate { $0.id == selectionID })
+                                if let selectionToUpdate = try context.fetch(descriptor).first {
+                                    selectionToUpdate.orderIndex = index
+                                }
+                            }
+                            try context.save()
+                        } catch {
+                            print("Failed to save new order: \(error)")
+                        }
+                    }
+                    await send(.loadSelectedDiets)
+                }
+                
+            case let .setDraggedDiet(diet):
+                state.draggedDiet = diet
+                return .none
+                
+            case let .moveDiet(from: fromID, to: toID):
+                guard let fromIndex = state.selectedDiets.firstIndex(where: { $0.id == fromID }),
+                      let toIndex = state.selectedDiets.firstIndex(where: { $0.id == toID }) else {
+                    return .none
+                }
+                state.selectedDiets.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+                state.draggedDiet = nil // 드롭 직후 드래그 상태 초기화
+                
+                return .run { [selectedDiets = state.selectedDiets] send in
+                    await MainActor.run {
+                        do {
+                            let context = modelContainer.mainContext
+                            for (index, diet) in selectedDiets.enumerated() {
+                                let selectionID = diet.id
+                                let descriptor = FetchDescriptor<AnalysisSelection>(predicate: #Predicate { $0.id == selectionID })
+                                if let selectionToUpdate = try context.fetch(descriptor).first {
+                                    selectionToUpdate.orderIndex = index
+                                }
+                            }
+                            try context.save()
+                        } catch {
+                            print("Failed to save new order: \(error)")
+                        }
+                    }
+                    await send(.loadSelectedDiets)
+                }
                 
             case .analyzeAddDietAction(_):
                 return .none

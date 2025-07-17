@@ -49,7 +49,7 @@ struct AnalyzeAddDietFeature {
     
     enum DelegateAction: Equatable {
         case dismissSheet
-        case addDiets([SelectedDiet])
+        case dietsAdded
     }
 
     
@@ -81,10 +81,26 @@ struct AnalyzeAddDietFeature {
                 return .none
                 
             case .addButtonTapped:
-                let selectedDiets = state.currentDietList.filter { state.selectedDietIDs.contains($0.id) }.map { diet in
-                    SelectedDiet(diet: diet)
+                return .run { [selectedDietIDs = state.selectedDietIDs] send in
+                    await MainActor.run {
+                        do {
+                            let context = modelContainer.mainContext
+                            
+                            // Determine the starting order index
+                            let countDescriptor = FetchDescriptor<AnalysisSelection>()
+                            let currentCount = try context.fetchCount(countDescriptor)
+                            
+                            for (index, dietID) in selectedDietIDs.enumerated() {
+                                let selection = AnalysisSelection(dietID: dietID, orderIndex: currentCount + index)
+                                context.insert(selection)
+                            }
+                            try context.save()
+                        } catch {
+                            print("Failed to save diet selections: \(error)")
+                        }
+                    }
+                    await send(.delegate(.dietsAdded))
                 }
-                return .send(.delegate(.addDiets(selectedDiets)))
                 
             case .favoriteFilterButtonTapped:
                 state.isFavoriteFilterActive.toggle()
