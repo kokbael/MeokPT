@@ -104,7 +104,6 @@ struct AnalyzeFeature {
         @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
         var isEditing: Bool = false
         var draggedDiet: SelectedDiet?
-        var deletingItems: Set<UUID> = []
     }
     
     enum Action: BindableAction {
@@ -119,7 +118,6 @@ struct AnalyzeFeature {
         case dietsLoaded([SelectedDiet])
         case editButtonTapped
         case deleteButtonTapped(id: UUID)
-        case move(from: IndexSet, to: Int)
         case setDraggedDiet(SelectedDiet?)
         case moveDiet(from: UUID, to: UUID)
     }
@@ -211,28 +209,6 @@ struct AnalyzeFeature {
                             print("Failed to delete diet selection: \(error)")
                         }
                     }
-                }
-                
-            case let .move(from, to):
-                state.selectedDiets.move(fromOffsets: from, toOffset: to)
-                
-                return .run { [selectedDiets = state.selectedDiets] send in
-                    await MainActor.run {
-                        do {
-                            let context = modelContainer.mainContext
-                            for (index, diet) in selectedDiets.enumerated() {
-                                let selectionID = diet.id
-                                let descriptor = FetchDescriptor<AnalysisSelection>(predicate: #Predicate { $0.id == selectionID })
-                                if let selectionToUpdate = try context.fetch(descriptor).first {
-                                    selectionToUpdate.orderIndex = index
-                                }
-                            }
-                            try context.save()
-                        } catch {
-                            print("Failed to save new order: \(error)")
-                        }
-                    }
-                    await send(.loadSelectedDiets)
                 }
                 
             case let .setDraggedDiet(diet):

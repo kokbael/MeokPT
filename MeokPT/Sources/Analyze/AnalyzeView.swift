@@ -139,7 +139,7 @@ struct AnalyzeView: View {
                                             .onDrag {
                                                 if store.isEditing {
                                                     store.send(.setDraggedDiet(entry))
-                                                    return NSItemProvider(object: entry.id.uuidString as NSString)
+                                                    return NSItemProvider() // Return an empty provider: 실제 상태 관리는 draggedDiet 변수가 전담
                                                 }
                                                 return NSItemProvider()
                                             }
