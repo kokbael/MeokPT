@@ -34,7 +34,7 @@ struct ActivityLevelView: View {
                             .stroke(Color(UIColor.separator), lineWidth: 1)
                     )
                     .onTapGesture {
-                        
+                        store.send(.selectLevel(level))
                     }
                 }
             }

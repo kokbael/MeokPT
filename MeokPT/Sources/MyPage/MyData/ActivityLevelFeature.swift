@@ -53,27 +53,22 @@ struct ActivityLevelFeature {
 
     }
     
-    enum Action: BindableAction {
+    enum Action {
+        case selectLevel(ActivityLevel)
         case delegate(DelegateAction)
-        case binding(BindingAction<State>)
     }
     
     enum DelegateAction: Equatable {
         case dismissSheet
+        case selectedLevel(ActivityLevel)
     }
 
-    
-    enum CancelID { case timer }
-    
-    @Dependency(\.modelContainer) var modelContainer
-    
     var body: some ReducerOf<Self> {
-        BindingReducer()
         Reduce { state, action in
             switch action {
+            case let .selectLevel(level):
+                return .send(.delegate(.selectedLevel(level)))
                 
-            case .binding(_):
-                return .none
             case .delegate(_):
                 return .none
 

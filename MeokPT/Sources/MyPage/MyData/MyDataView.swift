@@ -29,75 +29,139 @@ struct MyDataView: View {
                         .pickerStyle(.segmented)
                         .fixedSize()
                     }
-                    // 신체 정보 입력
+                    
                     VStack(spacing: 24) {
-                        HStack {
-                            Text("신체 정보")
-                                .font(.title2.bold())
-                            Spacer()
-                        }
-                        // 성별 선택
-                        Picker("성별", selection: $store.selectedGenderFilter) {
-                            ForEach(GenderFilter.allCases) { filter in
-                                Text(filter.rawValue).tag(filter)
-                            }
-                        }
-                        .pickerStyle(.segmented)
                         HStack(spacing: 36) {
-                            UnitTextField(
-                                title: "신장",
-                                unit: " cm",
-                                text: $store.myHeight,
-                                focus: .heightField,
-                                focusedField: $focusedBodyField
+                            NutrientTextField(
+                                title: "칼로리",
+                                unit: "kcal",
+                                value: $store.myKcal,
+                                focus: .kcal,
+                                focusedField: $focusedNutrientField
                             )
-                            UnitTextField(
-                                title: "나이",
-                                unit: " 세",
-                                text: $store.myAge,
-                                focus: .ageField,
-                                focusedField: $focusedBodyField
+                            NutrientTextField(
+                                title: "탄수화물",
+                                unit: "g",
+                                value: $store.myCarbohydrate,
+                                focus: .carbohydrate,
+                                focusedField: $focusedNutrientField
                             )
-                            UnitTextField(
-                                title: "체중",
-                                unit: " kg",
-                                text: $store.myWeight,
-                                focus: .weightField,
-                                focusedField: $focusedBodyField
+                            NutrientTextField(
+                                title: "단백질",
+                                unit: "g",
+                                value: $store.myProtein,
+                                focus: .protein,
+                                focusedField: $focusedNutrientField
                             )
                         }
-                    }
-                    
-                    Divider().padding(.horizontal, -24)
-                    
-                    // 식단 목표 선택
-                    VStack(spacing: 24) {
+                        HStack(spacing: 36) {
+                            NutrientTextField(
+                                title: "지방",
+                                unit: "g",
+                                value: $store.myFat,
+                                focus: .fat,
+                                focusedField: $focusedNutrientField
+                            )
+                            NutrientTextField(
+                                title: "식이섬유",
+                                unit: "g",
+                                value: $store.myDietaryFiber,
+                                focus: .dietaryFiber,
+                                focusedField: $focusedNutrientField
+                            )
+                            NutrientTextField(
+                                title: "나트륨",
+                                unit: "mg",
+                                value: $store.mySodium,
+                                focus: .sodium,
+                                focusedField: $focusedNutrientField
+                            )
+                        }
                         HStack {
-                            Text("식단 목표")
-                                .font(.title2.bold())
+                            NutrientTextField(
+                                title: "당류",
+                                unit: "g",
+                                value: $store.mySugar,
+                                focus: .sugar,
+                                focusedField: $focusedNutrientField
+                            )
+                            Spacer()
                             Spacer()
                         }
-                        Picker("식단 목표", selection: $store.selectedTargetFilter) {
-                            ForEach(TargetFilter.allCases) { filter in
-                                Text(filter.rawValue).tag(filter)
+                    }
+                    .disabled(store.selectedAutoOrCustomFilter == .auto)
+
+                    if store.selectedAutoOrCustomFilter == .auto {
+                        // 신체 정보 입력
+                        VStack(spacing: 24) {
+                            HStack {
+                                Text("신체 정보")
+                                    .font(.title2.bold())
+                                Spacer()
+                            }
+                            // 성별 선택
+                            Picker("성별", selection: $store.selectedGenderFilter) {
+                                ForEach(GenderFilter.allCases) { filter in
+                                    Text(filter.rawValue).tag(filter)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            HStack(spacing: 36) {
+                                UnitTextField(
+                                    title: "신장",
+                                    unit: " cm",
+                                    text: $store.myHeight,
+                                    focus: .heightField,
+                                    focusedField: $focusedBodyField
+                                )
+                                UnitTextField(
+                                    title: "나이",
+                                    unit: " 세",
+                                    text: $store.myAge,
+                                    focus: .ageField,
+                                    focusedField: $focusedBodyField
+                                )
+                                UnitTextField(
+                                    title: "체중",
+                                    unit: " kg",
+                                    text: $store.myWeight,
+                                    focus: .weightField,
+                                    focusedField: $focusedBodyField
+                                )
                             }
                         }
-                        .pickerStyle(.segmented)
-                    }
-                    
-                    Divider().padding(.horizontal, -24)
-
-                    // 활동량 선택
-                    HStack {
-                        Text("활동량")
-                            .font(.title2.bold())
-                        Spacer()
-                        Button(action: {
-                            store.send(.presentActivityLevelSheet)
-                        }) {
+                        
+                        Divider().padding(.horizontal, -24)
+                        
+                        // 식단 목표 선택
+                        VStack(spacing: 24) {
                             HStack {
-                                Text("활동량 선택하기")
-                                Image(systemName: "chevron.up")
+                                Text("식단 목표")
+                                    .font(.title2.bold())
+                                Spacer()
+                            }
+                            Picker("식단 목표", selection: $store.selectedTargetFilter) {
+                                ForEach(TargetFilter.allCases) { filter in
+                                    Text(filter.rawValue).tag(filter)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        
+                        Divider().padding(.horizontal, -24)
+                        
+                        // 활동량 선택
+                        HStack {
+                            Text("활동량")
+                                .font(.title2.bold())
+                            Spacer()
+                            Button(action: {
+                                store.send(.presentActivityLevelSheet)
+                            }) {
+                                HStack {
+                                    Text(store.activityLevelTitle)
+                                    Image(systemName: "chevron.up")
+                                }
                             }
                         }
                     }
@@ -106,10 +170,35 @@ struct MyDataView: View {
             }
             .onTapGesture {
                 focusedBodyField = nil
+                focusedNutrientField = nil
             }
             .scrollDismissesKeyboard(.immediately)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
+                    if focusedNutrientField != nil {
+                        Spacer()
+                        Button(focusedNutrientField == .sugar ? "완료" : "다음") {
+                            switch focusedNutrientField {
+                            case .kcal:
+                                focusedNutrientField = .carbohydrate
+                            case .carbohydrate:
+                                focusedNutrientField = .protein
+                            case .protein:
+                                focusedNutrientField = .fat
+                            case .fat:
+                                focusedNutrientField = .dietaryFiber
+                            case .dietaryFiber:
+                                focusedNutrientField = .sodium
+                            case .sodium:
+                                focusedNutrientField = .sugar
+                            case .sugar:
+                                focusedNutrientField = nil
+                            case .none:
+                                break
+                            }
+                        }
+                    }
+                    
                     if focusedBodyField != nil {
                         Spacer()
                         Button(focusedBodyField == .weightField ? "완료" : "다음") {
@@ -142,6 +231,53 @@ struct MyDataView: View {
             
         }
         .tint(Color("TextButton"))
+    }
+}
+
+private struct NutrientTextField: View {
+    let title: String
+    let unit: String
+    @Binding var value: Double?
+    let focus: NutrientField
+    @FocusState.Binding var focusedField: NutrientField?
+
+    private var textValue: Binding<String> {
+        Binding<String>(
+            get: { value.map { String(format: "%.0f", $0) } ?? "" },
+            set: { value = Double($0) }
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Text(title)
+                    .foregroundStyle(Color(.placeholderText))
+                    .allowsHitTesting(false)
+                    .opacity(textValue.wrappedValue.isEmpty ? 1 : 0)
+
+                HStack(spacing: 0) {
+                    TextField("", text: textValue)
+                        .focused($focusedField, equals: focus)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(textValue.wrappedValue.isEmpty ? .center : .trailing)
+                        .fixedSize()
+                    
+                    if !textValue.wrappedValue.isEmpty {
+                        Text(unit)
+                    }
+                }
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedField = focus
+            }
+            
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(Color(.placeholderText))
+        }
     }
 }
 
