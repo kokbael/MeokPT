@@ -17,81 +17,51 @@ struct MyDataView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 36) {
-                    HStack {
-                        Text("목표 섭취량")
-                            .font(.title2.bold())
-                        Spacer()
-                        Picker("목표 섭취량 계산 방식", selection: $store.selectedAutoOrCustomFilter) {
-                            ForEach(AutoOrCustomFilter.allCases) { filter in
-                                Text(filter.rawValue).tag(filter)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .fixedSize()
-                    }
-                    
                     VStack(spacing: 24) {
-                        HStack(spacing: 36) {
-                            NutrientTextField(
-                                title: "칼로리",
-                                unit: "kcal",
-                                value: $store.myKcal,
-                                focus: .kcal,
-                                focusedField: $focusedNutrientField
-                            )
-                            NutrientTextField(
-                                title: "탄수화물",
-                                unit: "g",
-                                value: $store.myCarbohydrate,
-                                focus: .carbohydrate,
-                                focusedField: $focusedNutrientField
-                            )
-                            NutrientTextField(
-                                title: "단백질",
-                                unit: "g",
-                                value: $store.myProtein,
-                                focus: .protein,
-                                focusedField: $focusedNutrientField
-                            )
-                        }
-                        HStack(spacing: 36) {
-                            NutrientTextField(
-                                title: "지방",
-                                unit: "g",
-                                value: $store.myFat,
-                                focus: .fat,
-                                focusedField: $focusedNutrientField
-                            )
-                            NutrientTextField(
-                                title: "식이섬유",
-                                unit: "g",
-                                value: $store.myDietaryFiber,
-                                focus: .dietaryFiber,
-                                focusedField: $focusedNutrientField
-                            )
-                            NutrientTextField(
-                                title: "나트륨",
-                                unit: "mg",
-                                value: $store.mySodium,
-                                focus: .sodium,
-                                focusedField: $focusedNutrientField
-                            )
-                        }
                         HStack {
-                            NutrientTextField(
-                                title: "당류",
-                                unit: "g",
-                                value: $store.mySugar,
-                                focus: .sugar,
-                                focusedField: $focusedNutrientField
-                            )
+                            Text("목표 섭취량")
+                                .font(.title2.bold())
                             Spacer()
+                            Picker("목표 섭취량 계산 방식", selection: $store.selectedAutoOrCustomFilter) {
+                                ForEach(AutoOrCustomFilter.allCases) { filter in
+                                    Text(filter.rawValue).tag(filter)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .fixedSize()
+                        }
+                        
+                        // 영양성분 입력
+                        VStack(spacing: 8) {
+                            Spacer()
+                            NutrientRow(label: "열량", unit: "kcal", value: $store.myKcal, focus: .kcal, focusedField: $focusedNutrientField)
+                            Divider()
+                            NutrientRow(label: "탄수화물", unit: "g", value: $store.myCarbohydrate, focus: .carbohydrate, focusedField: $focusedNutrientField)
+                            Divider()
+                            NutrientRow(label: "단백질", unit: "g", value: $store.myProtein, focus: .protein, focusedField: $focusedNutrientField)
+                            Divider()
+                            NutrientRow(label: "지방", unit: "g", value: $store.myFat, focus: .fat, focusedField: $focusedNutrientField)
+                            Divider()
+                            NutrientRow(label: "식이섬유", unit: "g", value: $store.myDietaryFiber, focus: .dietaryFiber, focusedField: $focusedNutrientField)
+                            Divider()
+                            NutrientRow(label: "당류", unit: "g", value: $store.mySugar, focus: .sugar, focusedField: $focusedNutrientField)
+                            Divider()
+                            NutrientRow(label: "나트륨", unit: "mg", value: $store.mySodium, focus: .sodium, focusedField: $focusedNutrientField)
                             Spacer()
                         }
+                        .padding(.horizontal)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                        .cornerRadius(20)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color(UIColor.separator), lineWidth: 1)
+                        )
+                        .disabled(store.selectedAutoOrCustomFilter == .auto)
                     }
-                    .disabled(store.selectedAutoOrCustomFilter == .auto)
 
                     if store.selectedAutoOrCustomFilter == .auto {
+                        Text("정보를 입력하면 목표 섭취량을 자동 계산합니다.")
+                        Divider().padding(.horizontal, -24)
                         // 신체 정보 입력
                         VStack(spacing: 24) {
                             HStack {
@@ -164,20 +134,27 @@ struct MyDataView: View {
                                 }
                             }
                         }
+                        
+                        Divider().padding(.horizontal, -24)
+                        
+                        Text("목표 섭취량은 미플린-세인트 지어(Mifflin-St Jeor) 공식을 사용하여 기초대사량(BMR)을 계산하고, 이를 바탕으로 개인의 목표와 활동대사량(TDEE)에 맞춰 설정됩니다.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, -16)
                     }
                 }
                 .padding(24)
             }
             .onTapGesture {
-                focusedBodyField = nil
                 focusedNutrientField = nil
+                focusedBodyField = nil
             }
             .scrollDismissesKeyboard(.immediately)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     if focusedNutrientField != nil {
                         Spacer()
-                        Button(focusedNutrientField == .sugar ? "완료" : "다음") {
+                        Button(focusedNutrientField == .sodium ? "완료" : "다음") {
                             switch focusedNutrientField {
                             case .kcal:
                                 focusedNutrientField = .carbohydrate
@@ -188,10 +165,10 @@ struct MyDataView: View {
                             case .fat:
                                 focusedNutrientField = .dietaryFiber
                             case .dietaryFiber:
-                                focusedNutrientField = .sodium
-                            case .sodium:
                                 focusedNutrientField = .sugar
                             case .sugar:
+                                focusedNutrientField = .sodium
+                            case .sodium:
                                 focusedNutrientField = nil
                             case .none:
                                 break
@@ -234,8 +211,36 @@ struct MyDataView: View {
     }
 }
 
+// MARK: - Nutrient Input Row View
+private struct NutrientRow: View {
+    let label: String
+    let unit: String
+    @Binding var value: Double?
+    let focus: NutrientField
+    @FocusState.Binding var focusedField: NutrientField?
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(Color("AppSecondaryColor"))
+                .font(.body)
+                .frame(width: 70, alignment: .leading)
+            
+            Spacer()
+
+            NutrientTextField(
+                unit: unit,
+                value: $value,
+                focus: focus,
+                focusedField: $focusedField
+            )
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Nutrient Text Field
 private struct NutrientTextField: View {
-    let title: String
     let unit: String
     @Binding var value: Double?
     let focus: NutrientField
@@ -243,40 +248,33 @@ private struct NutrientTextField: View {
 
     private var textValue: Binding<String> {
         Binding<String>(
-            get: { value.map { String(format: "%.0f", $0) } ?? "" },
-            set: { value = Double($0) }
+            get: {
+                guard let value = value else { return "" }
+                // 소수점 아래 값이 0이면 정수로, 아니면 소수점 첫째 자리까지 표시
+                return value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
+            },
+            set: {
+                value = Double($0)
+            }
         )
     }
 
     var body: some View {
-        VStack(spacing: 4) {
-            ZStack {
-                Text(title)
-                    .foregroundStyle(Color(.placeholderText))
-                    .allowsHitTesting(false)
-                    .opacity(textValue.wrappedValue.isEmpty ? 1 : 0)
-
-                HStack(spacing: 0) {
-                    TextField("", text: textValue)
-                        .focused($focusedField, equals: focus)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(textValue.wrappedValue.isEmpty ? .center : .trailing)
-                        .fixedSize()
-                    
-                    if !textValue.wrappedValue.isEmpty {
-                        Text(unit)
-                    }
-                }
-            }
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedField = focus
-            }
+        HStack(spacing: 4) {
+            TextField("0", text: textValue)
+                .focused($focusedField, equals: focus)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(minWidth: 50)
             
-            Rectangle()
-                .frame(height: 1)
-                .foregroundStyle(Color(.placeholderText))
+            Text(unit)
+                .foregroundStyle(.secondary)
+                .frame(width: 40, alignment: .center)
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField = focus
         }
     }
 }

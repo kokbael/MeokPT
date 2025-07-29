@@ -130,7 +130,8 @@ struct MyDataFeature {
               let height = Double(state.myHeight),
               let weight = Double(state.myWeight),
               let age = Double(state.myAge),
-              let activityLevel = state.activityLevel else {
+              let activityLevel = state.activityLevel,
+              weight > 0 else {
             return
         }
         
@@ -157,28 +158,42 @@ struct MyDataFeature {
             break
         }
         
-        state.myKcal = targetKcal
+        state.myKcal = max(0, targetKcal)
         
-        // 4. 탄단지 비율 설정
-        let carbRatio, proteinRatio, fatRatio: Double
+        // 4. 목표별 단백질 섭취량 계산 (체중 기반)
+        let proteinPerKg: Double
         switch state.selectedTargetFilter {
-        case .weightLoss:
-            (carbRatio, proteinRatio, fatRatio) = (0.4, 0.4, 0.2)
-        case .weightGain:
-            (carbRatio, proteinRatio, fatRatio) = (0.5, 0.3, 0.2)
-        case .healthy:
-            (carbRatio, proteinRatio, fatRatio) = (0.5, 0.2, 0.3)
-        case .vegan:
-            (carbRatio, proteinRatio, fatRatio) = (0.6, 0.2, 0.2)
+        case .weightLoss, .weightGain:
+            proteinPerKg = 1.7
+        case .healthy, .vegan:
+            proteinPerKg = 1.2
         }
+        let proteinInGrams = weight * proteinPerKg
+        state.myProtein = proteinInGrams
         
-        state.myCarbohydrate = (targetKcal * carbRatio) / 4
-        state.myProtein = (targetKcal * proteinRatio) / 4
-        state.myFat = (targetKcal * fatRatio) / 9
+        let proteinInCalories = proteinInGrams * 4
         
-        // 5. 기타 영양소 (일반 권장량)
-        state.myDietaryFiber = 25
-        state.mySodium = 2000
-        state.mySugar = 50
+        // 5. 지방 섭취량 계산 (총 칼로리의 25%)
+        let fatInCalories = targetKcal * 0.25
+        let fatInGrams = fatInCalories / 9
+        state.myFat = fatInGrams
+        
+        // 6. 탄수화물 섭취량 계산 (나머지 칼로리)
+        let carbInCalories = targetKcal - proteinInCalories - fatInCalories
+        let carbInGrams = carbInCalories / 4
+        state.myCarbohydrate = max(0, carbInGrams) // 탄수화물이 음수가 되지 않도록 보장
+        
+        // 7. 기타 영양소 계산
+        // 식이섬유: 1,000 kcal 당 14g
+        state.myDietaryFiber = (targetKcal / 1000) * 14
+        // 나트륨: WHO 권장 상한선
+        state.mySodium = 2300
+        // 당류: AHA 권장량 (성별 기반)
+        switch state.selectedGenderFilter {
+        case .male:
+            state.mySugar = 36
+        case .female:
+            state.mySugar = 25
+        }
     }
 }
