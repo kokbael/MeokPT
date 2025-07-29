@@ -40,17 +40,12 @@ struct MyPageView: View {
                     }
                 }
 
-                Section(header: Text("분석용 정보 입력")) {
+                Section(header: Text("목표 섭취량")) {
                     NavigationLink {
                         MyDataView(store: Store(initialState: MyDataFeature.State()) { MyDataFeature() })
                     } label: {
-                        Label("신체정보 입력하기", systemImage: "person.fill")
+                        Label("목표 섭취량 입력하기", systemImage: "pencil.and.list.clipboard")
                     }
-
-//                    NavigationLink {
-//                    } label: {
-//                        Label("하루 섭취량 입력", systemImage: "fork.knife")
-//                    }
                 }
                 Section(header: Text("저장한 분석")) {
                     NavigationLink {
