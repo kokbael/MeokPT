@@ -9,49 +9,69 @@ import SwiftUI
 import ComposableArchitecture
 
 struct MyDataView: View {
-    enum Field: Hashable {
-        case myHeight, myAge, myWeight
-    }
-    @FocusState private var focusedField: Field?
+    @FocusState private var focusedNutrientField: NutrientField?
+    @FocusState private var focusedBodyField: BodyField?
     @Bindable var store: StoreOf<MyDataFeature>
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 48) {
-                    // 성별 선택
-                    Picker("성별", selection: $store.selectedGenderFilter) {
-                        ForEach(GenderFilter.allCases) { filter in
-                            Text(filter.rawValue).tag(filter)
+                VStack(spacing: 36) {
+                    HStack {
+                        Text("목표 섭취량")
+                            .font(.title2.bold())
+                        Spacer()
+                        Picker("목표 섭취량 계산 방식", selection: $store.selectedAutoOrCustomFilter) {
+                            ForEach(AutoOrCustomFilter.allCases) { filter in
+                                Text(filter.rawValue).tag(filter)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .fixedSize()
+                    }
+                    // 신체 정보 입력
+                    VStack(spacing: 24) {
+                        HStack {
+                            Text("신체 정보")
+                                .font(.title2.bold())
+                            Spacer()
+                        }
+                        // 성별 선택
+                        Picker("성별", selection: $store.selectedGenderFilter) {
+                            ForEach(GenderFilter.allCases) { filter in
+                                Text(filter.rawValue).tag(filter)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        HStack(spacing: 36) {
+                            UnitTextField(
+                                title: "신장",
+                                unit: " cm",
+                                text: $store.myHeight,
+                                focus: .heightField,
+                                focusedField: $focusedBodyField
+                            )
+                            UnitTextField(
+                                title: "나이",
+                                unit: " 세",
+                                text: $store.myAge,
+                                focus: .ageField,
+                                focusedField: $focusedBodyField
+                            )
+                            UnitTextField(
+                                title: "체중",
+                                unit: " kg",
+                                text: $store.myWeight,
+                                focus: .weightField,
+                                focusedField: $focusedBodyField
+                            )
                         }
                     }
-                    .pickerStyle(.segmented)
-                    HStack(spacing: 36) {
-                        UnitTextField(
-                            title: "신장",
-                            unit: " cm",
-                            text: $store.myHeight,
-                            focus: .myHeight,
-                            focusedField: $focusedField
-                        )
-                        UnitTextField(
-                            title: "나이",
-                            unit: " 세",
-                            text: $store.myAge,
-                            focus: .myAge,
-                            focusedField: $focusedField
-                        )
-                        UnitTextField(
-                            title: "체중",
-                            unit: " kg",
-                            text: $store.myWeight,
-                            focus: .myWeight,
-                            focusedField: $focusedField
-                        )
-                    }
-
+                    
+                    Divider().padding(.horizontal, -24)
+                    
                     // 식단 목표 선택
-                    VStack {
+                    VStack(spacing: 24) {
                         HStack {
                             Text("식단 목표")
                                 .font(.title2.bold())
@@ -65,6 +85,8 @@ struct MyDataView: View {
                         .pickerStyle(.segmented)
                     }
                     
+                    Divider().padding(.horizontal, -24)
+
                     // 활동량 선택
                     HStack {
                         Text("활동량")
@@ -83,30 +105,21 @@ struct MyDataView: View {
                 .padding(24)
             }
             .onTapGesture {
-                focusedField = nil
+                focusedBodyField = nil
             }
             .scrollDismissesKeyboard(.immediately)
             .toolbar {
-                ToolbarItemGroup(placement: .principal) {
-                    Picker("정렬", selection: $store.selectedViewFilter) {
-                        ForEach(ViewFilter.allCases) { filter in
-                            Text(filter.rawValue).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize()
-                }
                 ToolbarItemGroup(placement: .keyboard) {
-                    if focusedField != nil {
+                    if focusedBodyField != nil {
                         Spacer()
-                        Button(focusedField == .myWeight ? "완료" : "다음") {
-                            switch focusedField {
-                            case .myHeight:
-                                focusedField = .myAge
-                            case .myAge:
-                                focusedField = .myWeight
-                            case .myWeight:
-                                focusedField = nil
+                        Button(focusedBodyField == .weightField ? "완료" : "다음") {
+                            switch focusedBodyField {
+                            case .heightField:
+                                focusedBodyField = .ageField
+                            case .ageField:
+                                focusedBodyField = .weightField
+                            case .weightField:
+                                focusedBodyField = nil
                             case .none:
                                 break
                             }
@@ -114,7 +127,7 @@ struct MyDataView: View {
                     }
                 }
             }
-            .navigationTitle("내 정보 입력")
+            .navigationTitle("목표 섭취량 설정")
             .navigationBarTitleDisplayMode(.inline)
             .background(Color("AppBackgroundColor"))
             .sheet(item: $store.scope(state: \.activityLevelSheet, action: \.activityLevelSheetAction)) { store in

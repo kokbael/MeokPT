@@ -9,9 +9,17 @@ import ComposableArchitecture
 import Foundation
 import SwiftData
 
-enum ViewFilter: String, CaseIterable, Identifiable {
-    case myData = "내 정보"
-    case targetNutrient = "목표 섭취량"
+enum NutrientField: Hashable {
+    case kcal, carbohydrate, protein, fat, dietaryFiber, sodium, sugar
+}
+
+enum BodyField: Hashable {
+    case heightField, ageField, weightField
+}
+
+enum AutoOrCustomFilter: String, CaseIterable, Identifiable {
+    case auto = " 자동 계산 "
+    case custom = " 직접 입력 "
     var id: String { self.rawValue }
 }
 
@@ -33,7 +41,7 @@ enum TargetFilter: String, CaseIterable, Identifiable {
 struct MyDataFeature {
     @ObservableState
     struct State: Equatable {
-        var selectedViewFilter: ViewFilter = .myData
+        var selectedAutoOrCustomFilter: AutoOrCustomFilter = .auto
         var myHeight: String = ""
         var myAge: String = ""
         var myWeight: String = ""

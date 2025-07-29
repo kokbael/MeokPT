@@ -4,8 +4,8 @@ struct UnitTextField: View {
     let title: String
     let unit: String
     @Binding var text: String
-    let focus: MyDataView.Field
-    @FocusState.Binding var focusedField: MyDataView.Field?
+    let focus: BodyField
+    @FocusState.Binding var focusedField: BodyField?
 
     var body: some View {
         VStack(spacing: 4) {
