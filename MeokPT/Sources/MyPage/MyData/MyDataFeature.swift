@@ -54,10 +54,17 @@ struct MyDataFeature {
         var myHeight: String = ""
         var myAge: String = ""
         var myWeight: String = ""
+        var isEmptyBodyField: Bool {
+            if myHeight == "", myAge == "", myWeight == "" {
+                return true
+            }
+            return false
+        }
         var selectedGenderFilter: GenderFilter = .male
         var selectedTargetFilter: TargetFilter = .weightLoss
         var activityLevel: ActivityLevel?
         var activityLevelTitle: String = "활동량 선택하기"
+        var scrollToTopID: UUID = UUID()
         @Presents var activityLevelSheet: ActivityLevelFeature.State?
     }
     
@@ -84,6 +91,9 @@ struct MyDataFeature {
             case .activityLevelSheetAction(.presented(.delegate(.selectedLevel(let level)))):
                 state.activityLevel = level
                 state.activityLevelTitle = level.title
+                if !state.isEmptyBodyField {
+                    state.scrollToTopID = UUID()
+                }
                 return .run { send in
                     await send(.calculateNutrients)
                     await send(.dismissSheet)
