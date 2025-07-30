@@ -17,8 +17,9 @@ extension Double {
     
     // Double 값을 상황에 맞게 포맷팅하는 계산 프로퍼티
     var formattedString: String {
+        guard self != 0 else { return "0" }
         // 값이 정수이면 ".0" 없이, 소수이면 소수점 첫째 자리까지 표시
-        return self.truncatingRemainder(dividingBy: 1) == 0
+        return ((self * 10).rounded() / 10).truncatingRemainder(dividingBy: 1) == 0
             ? String(format: "%.0f", self)
             : String(format: "%.1f", self)
     }

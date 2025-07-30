@@ -282,7 +282,7 @@ private struct NutrientRow: View {
     // 자동 계산된 영양성분 포맷팅
     var formattedValue: String {
         guard let value = displayValue else { return "0" }
-        return value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
+        return value.formattedString
     }
     
     var body: some View {
