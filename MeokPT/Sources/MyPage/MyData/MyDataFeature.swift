@@ -18,8 +18,8 @@ enum BodyField: Hashable {
 }
 
 enum AutoOrCustomFilter: String, CaseIterable, Identifiable {
-    case auto = " 자동 계산 "
     case custom = " 직접 입력 "
+    case auto = " 자동 계산 "
     var id: String { self.rawValue }
 }
 
@@ -41,7 +41,7 @@ enum TargetFilter: String, CaseIterable, Identifiable {
 struct MyDataFeature {
     @ObservableState
     struct State: Equatable {
-        var selectedAutoOrCustomFilter: AutoOrCustomFilter = .auto
+        var selectedAutoOrCustomFilter: AutoOrCustomFilter = .custom
         var focusedNutrientField: NutrientField?
         // 최종 저장될 영양성분
         var myKcal: Double?
@@ -71,8 +71,8 @@ struct MyDataFeature {
         var myHeight: String = ""
         var myAge: String = ""
         var myWeight: String = ""
-        var isEmptyBodyField: Bool {
-            myHeight.isEmpty || myAge.isEmpty || myWeight.isEmpty
+        var isUpdateNutrientDisabled: Bool {
+            myHeight.isEmpty || myAge.isEmpty || myWeight.isEmpty || activityLevel == nil
         }
         var selectedGenderFilter: GenderFilter = .male
         var selectedTargetFilter: TargetFilter = .weightLoss
@@ -89,6 +89,7 @@ struct MyDataFeature {
         case activityLevelSheetAction(PresentationAction<ActivityLevelFeature.Action>)
         case dismissSheet
         case calculateNutrients
+        case updateNutrientsTapped
         case saveCustomNutrientsTapped
         case formatCustomNutrientField(NutrientField?)
     }
@@ -123,13 +124,7 @@ struct MyDataFeature {
             case .activityLevelSheetAction(.presented(.delegate(.selectedLevel(let level)))):
                 state.activityLevel = level
                 state.activityLevelTitle = level.title
-                if !state.isEmptyBodyField {
-                    state.scrollToTopID = UUID()
-                }
-                return .run { send in
-                    await send(.calculateNutrients)
-                    await send(.dismissSheet)
-                }
+                return .send(.dismissSheet)
                 
             case .activityLevelSheetAction(.presented(.delegate(.dismissSheet))):
                 return .send(.dismissSheet)
@@ -139,17 +134,6 @@ struct MyDataFeature {
                 return .none
 
             case .activityLevelSheetAction(_):
-                return .none
-                
-            case .binding(\.selectedGenderFilter),
-                 .binding(\.selectedTargetFilter),
-                 .binding(\.myHeight),
-                 .binding(\.myAge),
-                 .binding(\.myWeight):
-                return .send(.calculateNutrients)
-                
-            case .calculateNutrients:
-                calculateNutrients(state: &state)
                 return .none
                 
             case .formatCustomNutrientField(let field):
@@ -186,6 +170,14 @@ struct MyDataFeature {
                 }
                 return .none
                 
+            case .updateNutrientsTapped:
+                state.scrollToTopID = UUID()
+                return .send(.calculateNutrients)
+                
+            case .calculateNutrients:
+                calculateNutrients(state: &state)
+                return .none
+
             case .saveCustomNutrientsTapped:
                 // 값들이 이미 포맷팅되었으므로, 간단히 변환만 수행
                 state.myKcal = Double(state.customKcal)

@@ -58,11 +58,26 @@ struct MyDataView: View {
                             )
                         }
 
-                        if store.selectedAutoOrCustomFilter == .auto {
-                            Text("정보를 입력하면 목표 섭취량을 자동 계산 후 저장합니다.")
-                                .font(.caption).bold()
-                                .foregroundStyle(Color("AppSecondaryColor"))
+                        if store.selectedAutoOrCustomFilter == .custom {
+                            // 저장 버튼
+                            Button(action: {
+                                store.send(.saveCustomNutrientsTapped)
+                            }) {
+                                Text("저장하기")
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 60)
+                                    .background(Color("AppTintColor"))
+                                    .cornerRadius(30)
+                            }
+                            .font(.headline.bold())
+                            .foregroundStyle(.black)
+                            .buttonStyle(PlainButtonStyle())
+                            .contentShape(Rectangle())
+                            .disabled(store.isCustomSaveButtonDisabled)
+                        }
+                        else {
                             Divider().padding(.horizontal, -24)
+                                .id("bottomAnchor")
                             // 신체 정보 입력
                             VStack(spacing: 24) {
                                 HStack {
@@ -139,17 +154,10 @@ struct MyDataView: View {
                             
                             Divider().padding(.horizontal, -24)
                             
-                            Text("목표 섭취량은 미플린-세인트 지어(Mifflin-St Jeor) 공식을 사용하여 기초대사량(BMR)을 계산하고, 이를 바탕으로 개인의 목표와 활동대사량(TDEE)에 맞춰 설정됩니다.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, -16)
-                        }
-                        else {
-                            // 저장 버튼
                             Button(action: {
-                                store.send(.saveCustomNutrientsTapped)
+                                store.send(.updateNutrientsTapped)
                             }) {
-                                Text("저장하기")
+                                Text("목표 섭취량 업데이트")
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 60)
                                     .background(Color("AppTintColor"))
@@ -159,12 +167,15 @@ struct MyDataView: View {
                             .foregroundStyle(.black)
                             .buttonStyle(PlainButtonStyle())
                             .contentShape(Rectangle())
-                            .disabled(store.isCustomSaveButtonDisabled)
+                            .disabled(store.isUpdateNutrientDisabled)
+                            
+                            Text("목표 섭취량은 미플린-세인트 지어(Mifflin-St Jeor) 공식을 사용하여 기초대사량(BMR)을 계산하고, 이를 바탕으로 개인의 목표와 활동대사량(TDEE)에 맞춰 설정됩니다.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, -16)
                         }
-                        
                     }
                     .padding(24)
-                    Color.clear.frame(height: 0).id("bottomAnchor")
                 }
                 .onTapGesture {
                     focusedNutrientField = nil
@@ -180,7 +191,7 @@ struct MyDataView: View {
                     Task {
                         try? await Task.sleep(for: .milliseconds(100))
                         withAnimation(.easeInOut(duration: 0.7)) {
-                            proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                            proxy.scrollTo("bottomAnchor", anchor: .top)
                         }
                     }
                 }
