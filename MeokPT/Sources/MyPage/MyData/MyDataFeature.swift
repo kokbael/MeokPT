@@ -79,6 +79,7 @@ struct MyDataFeature {
         var activityLevel: ActivityLevel?
         var activityLevelTitle: String = "활동량 선택하기"
         var scrollToTopID: UUID = UUID()
+        var scrollToBottomID: UUID = UUID()
         @Presents var activityLevelSheet: ActivityLevelFeature.State?
     }
     
@@ -100,6 +101,14 @@ struct MyDataFeature {
                     // 이전 필드를 포맷팅하는 액션을 보냅니다.
                     if let field = oldValue {
                         return .send(.formatCustomNutrientField(field))
+                    }
+                    return .none
+                }
+            }
+            .onChange(of: \.selectedAutoOrCustomFilter) { _, newValue in
+                Reduce { state, action in
+                    if newValue == .auto {
+                        state.scrollToBottomID = UUID()
                     }
                     return .none
                 }

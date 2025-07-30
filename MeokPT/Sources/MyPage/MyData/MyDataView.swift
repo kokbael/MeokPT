@@ -164,6 +164,7 @@ struct MyDataView: View {
                         
                     }
                     .padding(24)
+                    Color.clear.frame(height: 0).id("bottomAnchor")
                 }
                 .onTapGesture {
                     focusedNutrientField = nil
@@ -171,8 +172,16 @@ struct MyDataView: View {
                 }
                 .scrollDismissesKeyboard(.immediately)
                 .onChange(of: store.scrollToTopID) {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.7)) {
                         proxy.scrollTo("topAnchor", anchor: .top)
+                    }
+                }
+                .onChange(of: store.scrollToBottomID) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(100))
+                        withAnimation(.easeInOut(duration: 0.7)) {
+                            proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                        }
                     }
                 }
                 // 1. TCA Store의 상태가 바뀌면 -> 뷰의 @FocusState를 업데이트
