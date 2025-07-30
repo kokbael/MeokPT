@@ -24,7 +24,7 @@ struct MyDataView: View {
                                 Text("목표 섭취량")
                                     .font(.title2.bold())
                                 Spacer()
-                                Picker("목표 섭취량 계산 방식", selection: $store.selectedAutoOrCustomFilter) {
+                                Picker("목표 섭취량 계산 방식", selection: $store.selectedAutoOrCustomFilter.animation()) {
                                     ForEach(AutoOrCustomFilter.allCases) { filter in
                                         Text(filter.rawValue).tag(filter)
                                     }
@@ -35,34 +35,33 @@ struct MyDataView: View {
                             
                             // 영양성분 입력
                             VStack(spacing: 8) {
-                                Spacer()
-                                NutrientRow(label: "열량", unit: "kcal", value: $store.myKcal, focus: .kcal, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "열량", unit: "kcal", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customKcal, displayValue: store.myKcal, focus: .kcal, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "탄수화물", unit: "g", value: $store.myCarbohydrate, focus: .carbohydrate, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "탄수화물", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customCarbohydrate, displayValue: store.myCarbohydrate, focus: .carbohydrate, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "단백질", unit: "g", value: $store.myProtein, focus: .protein, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "단백질", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customProtein, displayValue: store.myProtein, focus: .protein, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "지방", unit: "g", value: $store.myFat, focus: .fat, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "지방", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customFat, displayValue: store.myFat, focus: .fat, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "식이섬유", unit: "g", value: $store.myDietaryFiber, focus: .dietaryFiber, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "식이섬유", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customDietaryFiber, displayValue: store.myDietaryFiber, focus: .dietaryFiber, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "당류", unit: "g", value: $store.mySugar, focus: .sugar, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "당류", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customSugar, displayValue: store.mySugar, focus: .sugar, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "나트륨", unit: "mg", value: $store.mySodium, focus: .sodium, focusedField: $focusedNutrientField)
-                                Spacer()
+                                NutrientRow(label: "나트륨", unit: "mg", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customSodium, displayValue: store.mySodium, focus: .sodium, focusedField: $focusedNutrientField)
                             }
-                            .padding(.horizontal)
+                            .padding()
                             .background(Color(uiColor: .secondarySystemGroupedBackground))
                             .cornerRadius(20)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 20)
                                     .stroke(Color(UIColor.separator), lineWidth: 1)
                             )
-                            .disabled(store.selectedAutoOrCustomFilter == .auto)
                         }
 
                         if store.selectedAutoOrCustomFilter == .auto {
-                            Text("정보를 입력하면 목표 섭취량을 자동 계산합니다.")
+                            Text("정보를 입력하면 목표 섭취량을 자동 계산 후 저장합니다.")
+                                .font(.caption).bold()
+                                .foregroundStyle(Color("AppSecondaryColor"))
                             Divider().padding(.horizontal, -24)
                             // 신체 정보 입력
                             VStack(spacing: 24) {
@@ -78,6 +77,7 @@ struct MyDataView: View {
                                     }
                                 }
                                 .pickerStyle(.segmented)
+                                // 신장, 나이, 체중 입력
                                 HStack(spacing: 36) {
                                     UnitTextField(
                                         title: "신장",
@@ -144,6 +144,24 @@ struct MyDataView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, -16)
                         }
+                        else {
+                            // 저장 버튼
+                            Button(action: {
+                                store.send(.saveCustomNutrientsTapped)
+                            }) {
+                                Text("저장하기")
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 60)
+                                    .background(Color("AppTintColor"))
+                                    .cornerRadius(30)
+                            }
+                            .font(.headline.bold())
+                            .foregroundStyle(.black)
+                            .buttonStyle(PlainButtonStyle())
+                            .contentShape(Rectangle())
+                            .disabled(store.isCustomSaveButtonDisabled)
+                        }
+                        
                     }
                     .padding(24)
                 }
@@ -156,6 +174,14 @@ struct MyDataView: View {
                     withAnimation {
                         proxy.scrollTo("topAnchor", anchor: .top)
                     }
+                }
+                // 1. TCA Store의 상태가 바뀌면 -> 뷰의 @FocusState를 업데이트
+                .onChange(of: store.focusedNutrientField) { _, newValue in
+                    focusedNutrientField = newValue
+                }
+                // 2. 뷰의 @FocusState가 바뀌면 (사용자가 TextField를 탭하면) -> TCA Store의 상태를 업데이트
+                .onChange(of: focusedNutrientField) { _, newValue in
+                    store.send(.binding(.set(\.focusedNutrientField, newValue)))
                 }
             }
             .toolbar {
@@ -223,10 +249,22 @@ struct MyDataView: View {
 private struct NutrientRow: View {
     let label: String
     let unit: String
-    @Binding var value: Double?
+    let autoOrCustom: AutoOrCustomFilter
+    @Binding var text: String
+    let displayValue: Double?
     let focus: NutrientField
     @FocusState.Binding var focusedField: NutrientField?
-
+    
+    var isCustomMode: Bool {
+        autoOrCustom == .custom
+    }
+    
+    // 자동 계산된 영양성분 포맷팅
+    var formattedValue: String {
+        guard let value = displayValue else { return "0" }
+        return value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
+    }
+    
     var body: some View {
         HStack {
             Text(label)
@@ -235,55 +273,37 @@ private struct NutrientRow: View {
                 .frame(width: 70, alignment: .leading)
             
             Spacer()
-
-            NutrientTextField(
-                unit: unit,
-                value: $value,
-                focus: focus,
-                focusedField: $focusedField
-            )
-        }
-        .padding(.vertical, 8)
-    }
-}
-
-// MARK: - Nutrient Text Field
-private struct NutrientTextField: View {
-    let unit: String
-    @Binding var value: Double?
-    let focus: NutrientField
-    @FocusState.Binding var focusedField: NutrientField?
-
-    private var textValue: Binding<String> {
-        Binding<String>(
-            get: {
-                guard let value = value else { return "" }
-                // 소수점 아래 값이 0이면 정수로, 아니면 소수점 첫째 자리까지 표시
-                return value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%.1f", value)
-            },
-            set: {
-                value = Double($0)
-            }
-        )
-    }
-
-    var body: some View {
-        HStack(spacing: 4) {
-            TextField("0", text: textValue)
-                .focused($focusedField, equals: focus)
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .frame(minWidth: 50)
             
-            Text(unit)
-                .foregroundStyle(.secondary)
-                .frame(width: 40, alignment: .center)
+            if isCustomMode {
+                HStack(spacing: 4) {
+                    // 자동 계산된 값을 플레이스홀더로 사용
+                    TextField(formattedValue, text: $text)
+                        .focused($focusedField, equals: focus)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(minWidth: 50)
+                    
+                    Text(unit)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .center)
+                }
+                .onTapGesture {
+                    focusedField = focus
+                }
+            } else {
+                HStack(spacing: 4) {
+                    Text(formattedValue)
+                        .font(.body.bold())
+                        .multilineTextAlignment(.trailing)
+                        .frame(minWidth: 50, alignment: .trailing)
+                    
+                    Text(unit)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .center)
+                }
+            }
         }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            focusedField = focus
-        }
+        .frame(minHeight: 44)
     }
 }
 

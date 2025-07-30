@@ -42,7 +42,8 @@ struct MyDataFeature {
     @ObservableState
     struct State: Equatable {
         var selectedAutoOrCustomFilter: AutoOrCustomFilter = .auto
-        // 자동 계산 or 직접 입력한 영양성분
+        var focusedNutrientField: NutrientField?
+        // 최종 저장될 영양성분
         var myKcal: Double?
         var myCarbohydrate: Double?
         var myProtein: Double?
@@ -50,15 +51,28 @@ struct MyDataFeature {
         var myDietaryFiber: Double?
         var mySodium: Double?
         var mySugar: Double?
-        // 신체 정보
+        
+        // 직접 입력을 위한 임시 상태
+        var customKcal: String = ""
+        var customCarbohydrate: String = ""
+        var customProtein: String = ""
+        var customFat: String = ""
+        var customDietaryFiber: String = ""
+        var customSodium: String = ""
+        var customSugar: String = ""
+        
+        var isCustomSaveButtonDisabled: Bool {
+            customKcal.isEmpty || customCarbohydrate.isEmpty || customProtein.isEmpty ||
+            customFat.isEmpty || customDietaryFiber.isEmpty || customSodium.isEmpty ||
+            customSugar.isEmpty
+        }
+        
+        // 자동 계산을 위한 신체 정보
         var myHeight: String = ""
         var myAge: String = ""
         var myWeight: String = ""
         var isEmptyBodyField: Bool {
-            if myHeight == "", myAge == "", myWeight == "" {
-                return true
-            }
-            return false
+            myHeight.isEmpty || myAge.isEmpty || myWeight.isEmpty
         }
         var selectedGenderFilter: GenderFilter = .male
         var selectedTargetFilter: TargetFilter = .weightLoss
@@ -74,14 +88,23 @@ struct MyDataFeature {
         case activityLevelSheetAction(PresentationAction<ActivityLevelFeature.Action>)
         case dismissSheet
         case calculateNutrients
-    }
-    
-    enum DelegateAction: Equatable {
-        
+        case saveCustomNutrientsTapped
+        case formatCustomNutrientField(NutrientField?)
     }
     
     var body: some ReducerOf<Self> {
         BindingReducer()
+            .onChange(of: \.focusedNutrientField) { oldValue, newValue in
+                Reduce { state, action in
+                    // 포커스가 있던 필드에서 다른 곳으로 이동하면 (nil이 되거나 다른 필드로)
+                    // 이전 필드를 포맷팅하는 액션을 보냅니다.
+                    if let field = oldValue {
+                        return .send(.formatCustomNutrientField(field))
+                    }
+                    return .none
+                }
+            }
+        
         Reduce { state, action in
             switch action {
             case .presentActivityLevelSheet:
@@ -109,12 +132,6 @@ struct MyDataFeature {
             case .activityLevelSheetAction(_):
                 return .none
                 
-            case .binding(\.selectedAutoOrCustomFilter):
-                if state.selectedAutoOrCustomFilter == .auto {
-                    return .send(.calculateNutrients)
-                }
-                return .none
-                
             case .binding(\.selectedGenderFilter),
                  .binding(\.selectedTargetFilter),
                  .binding(\.myHeight),
@@ -124,6 +141,51 @@ struct MyDataFeature {
                 
             case .calculateNutrients:
                 calculateNutrients(state: &state)
+                return .none
+                
+            case .formatCustomNutrientField(let field):
+                guard let field = field else { return .none }
+                switch field {
+                case .kcal:
+                    if let roundedValue = state.customKcal.toDoubleAndRound() {
+                        state.customKcal = roundedValue.formattedString
+                    }
+                case .carbohydrate:
+                    if let roundedValue = state.customCarbohydrate.toDoubleAndRound() {
+                        state.customCarbohydrate = roundedValue.formattedString
+                    }
+                case .protein:
+                    if let roundedValue = state.customProtein.toDoubleAndRound() {
+                        state.customProtein = roundedValue.formattedString
+                    }
+                case .fat:
+                    if let roundedValue = state.customFat.toDoubleAndRound() {
+                        state.customFat = roundedValue.formattedString
+                    }
+                case .dietaryFiber:
+                    if let roundedValue = state.customDietaryFiber.toDoubleAndRound() {
+                        state.customDietaryFiber = roundedValue.formattedString
+                    }
+                case .sodium:
+                    if let roundedValue = state.customSodium.toDoubleAndRound() {
+                        state.customSodium = roundedValue.formattedString
+                    }
+                case .sugar:
+                    if let roundedValue = state.customSugar.toDoubleAndRound() {
+                        state.customSugar = roundedValue.formattedString
+                    }
+                }
+                return .none
+                
+            case .saveCustomNutrientsTapped:
+                // 값들이 이미 포맷팅되었으므로, 간단히 변환만 수행
+                state.myKcal = Double(state.customKcal)
+                state.myCarbohydrate = Double(state.customCarbohydrate)
+                state.myProtein = Double(state.customProtein)
+                state.myFat = Double(state.customFat)
+                state.myDietaryFiber = Double(state.customDietaryFiber)
+                state.mySodium = Double(state.customSodium)
+                state.mySugar = Double(state.customSugar)
                 return .none
                 
             case .binding(_):
