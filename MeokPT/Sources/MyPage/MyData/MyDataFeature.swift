@@ -96,8 +96,8 @@ struct MyDataFeature {
     
     var body: some ReducerOf<Self> {
         BindingReducer()
-            .onChange(of: \.focusedNutrientField) { oldValue, newValue in
-                Reduce { state, action in
+            .onChange(of: \.focusedNutrientField) { oldValue, _ in
+                Reduce { _, _ in
                     // 포커스가 있던 필드에서 다른 곳으로 이동하면 (nil이 되거나 다른 필드로)
                     // 이전 필드를 포맷팅하는 액션을 보냅니다.
                     if let field = oldValue {
@@ -107,7 +107,7 @@ struct MyDataFeature {
                 }
             }
             .onChange(of: \.selectedAutoOrCustomFilter) { _, newValue in
-                Reduce { state, action in
+                Reduce { state, _ in
                     if newValue == .auto {
                         state.scrollToBottomID = UUID()
                     }
