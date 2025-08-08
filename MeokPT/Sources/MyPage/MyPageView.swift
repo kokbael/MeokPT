@@ -8,7 +8,7 @@ struct MyPageView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
+                Section(header: Text(store.userProfile == nil ? "" : "프로필 설정")) {
                     Button {
                         store.send(store.userProfile == nil ? .loginSignUpButtonTapped : .profileEditButtonTapped)
                     } label: {
@@ -34,7 +34,8 @@ struct MyPageView: View {
 
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .foregroundStyle(.gray)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Color(UIColor.systemGray3))
                         }
                         .padding(.vertical, 8)
                     }
@@ -44,14 +45,14 @@ struct MyPageView: View {
                     NavigationLink {
                         MyDataView(store: Store(initialState: MyDataFeature.State()) { MyDataFeature() })
                     } label: {
-                        Label("목표 섭취량 입력하기", systemImage: "pencil.and.list.clipboard")
+                        Label("목표 섭취량 설정하기", systemImage: "gearshape.2")
                     }
                 }
                 Section(header: Text("저장한 분석")) {
                     NavigationLink {
 //                        AIHistoryView(store: Store(initialState: AIHistoryFeature.State()) { AIHistoryFeature() })
                     } label: {
-                        Label("저장한 분석 리스트 보기", systemImage: "list.bullet.clipboard.fill")
+                        Label("저장한 분석 리스트 보기", systemImage: "pencil.and.list.clipboard")
                     }
                 }
 
