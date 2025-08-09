@@ -143,17 +143,6 @@ struct MyDataFeature {
                     state.selectedTargetFilter = myData.selectedTargetFilter
                     state.activityLevel = myData.activityLevel
                     state.activityLevelTitle = myData.activityLevel.title
-                } else {
-                    return .run { send in
-                        await MainActor.run {
-                            let newMyData = MyData(id: UUID(), myHeight: "", myAge: "", myWeight: "", selectedGenderFilter: .male, selectedTargetFilter: .weightLoss, activityLevel: .veryLow)
-                            modelContainer.mainContext.insert(newMyData)
-                            // State 업데이트를 위해 다시 로드 액션을 보낼 수 있지만,
-                            // 이 경우엔 UI가 즉시 업데이트 될 필요는 없으므로 send 생략 가능
-                            // 필요하다면 아래 코드를 활성화
-                            // await send(.myDataLoaded(newMyData))
-                        }
-                    }
                 }
                 return .none
                 
@@ -168,14 +157,6 @@ struct MyDataFeature {
                     state.customDietaryFiber = targetNutrient.myDietaryFiber.formattedString
                     state.customSodium = targetNutrient.mySodium.formattedString
                     state.customSugar = targetNutrient.mySugar.formattedString
-                } else {
-                    return .run { send in
-                        await MainActor.run {
-                            let newTargetNutrient = TargetNutrient(id: UUID(), myKcal: 0, myCarbohydrate: 0, myProtein: 0, myFat: 0, myDietaryFiber: 0, mySodium: 0, mySugar: 0)
-                            modelContainer.mainContext.insert(newTargetNutrient)
-                            // await send(.targetNutrientLoaded(newTargetNutrient))
-                        }
-                    }
                 }
                 return .none
                 
@@ -186,7 +167,6 @@ struct MyDataFeature {
             case .activityLevelSheetAction(.presented(.delegate(.selectedLevel(let level)))):
                 state.activityLevel = level
                 state.activityLevelTitle = level.title
-                state.myData?.activityLevel = level
                 return .send(.dismissSheet)
                 
             case .activityLevelSheetAction(.presented(.delegate(.dismissSheet))):
@@ -238,48 +218,163 @@ struct MyDataFeature {
                 return .send(.calculateNutrients)
                 
             case .calculateNutrients:
-                guard let targetNutrient = state.targetNutrient else { return .none }
+                let myData: MyData
+                let isNewMyData: Bool
+                if let existingMyData = state.myData {
+                    myData = existingMyData
+                    isNewMyData = false
+                } else {
+                    guard let activityLevel = state.activityLevel else { return .none }
+                    let newMyData = MyData(id: UUID(), myHeight: state.myHeight, myAge: state.myAge, myWeight: state.myWeight, selectedGenderFilter: state.selectedGenderFilter, selectedTargetFilter: state.selectedTargetFilter, activityLevel: activityLevel)
+                    state.myData = newMyData
+                    myData = newMyData
+                    isNewMyData = true
+                }
+                
+                // 비동기 작업을 위해 필요한 데이터 저장
+                let myDataId = myData.id
+                let height = state.myHeight
+                let age = state.myAge
+                let weight = state.myWeight
+                let genderFilter = state.selectedGenderFilter
+                let targetFilter = state.selectedTargetFilter
+                let activityLevel = state.activityLevel
+                
+                // 로컬 객체 업데이트
+                myData.myHeight = height
+                myData.myAge = age
+                myData.myWeight = weight
+                myData.selectedGenderFilter = genderFilter
+                myData.selectedTargetFilter = targetFilter
+                if let activityLevel = activityLevel {
+                    myData.activityLevel = activityLevel
+                }
+
+                let targetNutrient: TargetNutrient
+                let isNewTargetNutrient: Bool
+                if let existingTargetNutrient = state.targetNutrient {
+                    targetNutrient = existingTargetNutrient
+                    isNewTargetNutrient = false
+                } else {
+                    let newTargetNutrient = TargetNutrient(id: UUID(), myKcal: 0, myCarbohydrate: 0, myProtein: 0, myFat: 0, myDietaryFiber: 0, mySodium: 0, mySugar: 0)
+                    state.targetNutrient = newTargetNutrient
+                    targetNutrient = newTargetNutrient
+                    isNewTargetNutrient = true
+                }
+                
                 calculateNutrients(state: &state, targetNutrient: targetNutrient)
+                
+                // 비동기 작업을 위해 계산된 값 저장
+                let targetNutrientId = targetNutrient.id
+                let kcal = targetNutrient.myKcal
+                let carbohydrate = targetNutrient.myCarbohydrate
+                let protein = targetNutrient.myProtein
+                let fat = targetNutrient.myFat
+                let dietaryFiber = targetNutrient.myDietaryFiber
+                let sodium = targetNutrient.mySodium
+                let sugar = targetNutrient.mySugar
+                
                 return .run { _ in
                     await MainActor.run {
-                        try? modelContainer.mainContext.save()
+                        let context = modelContainer.mainContext
+                        
+                        // MyData 처리
+                        if isNewMyData {
+                            let newMyData = MyData(id: myDataId, myHeight: height, myAge: age, myWeight: weight, selectedGenderFilter: genderFilter, selectedTargetFilter: targetFilter, activityLevel: activityLevel!)
+                            context.insert(newMyData)
+                        } else {
+                            // 기존 MyData 찾아 업데이트
+                            let descriptor = FetchDescriptor<MyData>(predicate: #Predicate { $0.id == myDataId })
+                            if let existingMyData = try? context.fetch(descriptor).first {
+                                existingMyData.myHeight = height
+                                existingMyData.myAge = age
+                                existingMyData.myWeight = weight
+                                existingMyData.selectedGenderFilter = genderFilter
+                                existingMyData.selectedTargetFilter = targetFilter
+                                if let activityLevel = activityLevel {
+                                    existingMyData.activityLevel = activityLevel
+                                }
+                            }
+                        }
+                        
+                        // TargetNutrient 처리
+                        if isNewTargetNutrient {
+                            let newTargetNutrient = TargetNutrient(id: targetNutrientId, myKcal: kcal, myCarbohydrate: carbohydrate, myProtein: protein, myFat: fat, myDietaryFiber: dietaryFiber, mySodium: sodium, mySugar: sugar)
+                            context.insert(newTargetNutrient)
+                        } else {
+                            // 기존 TargetNutrient 찾아 업데이트
+                            let descriptor = FetchDescriptor<TargetNutrient>(predicate: #Predicate { $0.id == targetNutrientId })
+                            if let existingTargetNutrient = try? context.fetch(descriptor).first {
+                                existingTargetNutrient.myKcal = kcal
+                                existingTargetNutrient.myCarbohydrate = carbohydrate
+                                existingTargetNutrient.myProtein = protein
+                                existingTargetNutrient.myFat = fat
+                                existingTargetNutrient.myDietaryFiber = dietaryFiber
+                                existingTargetNutrient.mySodium = sodium
+                                existingTargetNutrient.mySugar = sugar
+                            }
+                        }
+                        
+                        try? context.save()
                     }
                 }
 
             case .saveCustomNutrientsTapped:
-                guard let targetNutrient = state.targetNutrient else { return .none }
-                targetNutrient.myKcal = Double(state.customKcal) ?? 0
-                targetNutrient.myCarbohydrate = Double(state.customCarbohydrate) ?? 0
-                targetNutrient.myProtein = Double(state.customProtein) ?? 0
-                targetNutrient.myFat = Double(state.customFat) ?? 0
-                targetNutrient.myDietaryFiber = Double(state.customDietaryFiber) ?? 0
-                targetNutrient.mySodium = Double(state.customSodium) ?? 0
-                targetNutrient.mySugar = Double(state.customSugar) ?? 0
-                return .run { _ in
-                    await MainActor.run {
-                        try? modelContainer.mainContext.save()
-                    }
+                let targetNutrient: TargetNutrient
+                let isNewTargetNutrient: Bool
+                if let existingTargetNutrient = state.targetNutrient {
+                    targetNutrient = existingTargetNutrient
+                    isNewTargetNutrient = false
+                } else {
+                    let newTargetNutrient = TargetNutrient(id: UUID(), myKcal: 0, myCarbohydrate: 0, myProtein: 0, myFat: 0, myDietaryFiber: 0, mySodium: 0, mySugar: 0)
+                    state.targetNutrient = newTargetNutrient
+                    targetNutrient = newTargetNutrient
+                    isNewTargetNutrient = true
                 }
                 
-            case .binding(\.myHeight):
-                state.myData?.myHeight = state.myHeight
-                return .none
+                // 비동기 작업을 위한 값 추출
+                let targetNutrientId = targetNutrient.id
+                let kcal = Double(state.customKcal) ?? 0
+                let carbohydrate = Double(state.customCarbohydrate) ?? 0
+                let protein = Double(state.customProtein) ?? 0
+                let fat = Double(state.customFat) ?? 0
+                let dietaryFiber = Double(state.customDietaryFiber) ?? 0
+                let sodium = Double(state.customSodium) ?? 0
+                let sugar = Double(state.customSugar) ?? 0
                 
-            case .binding(\.myAge):
-                state.myData?.myAge = state.myAge
-                return .none
-
-            case .binding(\.myWeight):
-                state.myData?.myWeight = state.myWeight
-                return .none
+                // 로컬 객체 업데이트
+                targetNutrient.myKcal = kcal
+                targetNutrient.myCarbohydrate = carbohydrate
+                targetNutrient.myProtein = protein
+                targetNutrient.myFat = fat
+                targetNutrient.myDietaryFiber = dietaryFiber
+                targetNutrient.mySodium = sodium
+                targetNutrient.mySugar = sugar
                 
-            case .binding(\.selectedGenderFilter):
-                state.myData?.selectedGenderFilter = state.selectedGenderFilter
-                return .none
-                
-            case .binding(\.selectedTargetFilter):
-                state.myData?.selectedTargetFilter = state.selectedTargetFilter
-                return .none
+                return .run { _ in
+                    await MainActor.run {
+                        let context = modelContainer.mainContext
+                        
+                        if isNewTargetNutrient {
+                            let newTargetNutrient = TargetNutrient(id: targetNutrientId, myKcal: kcal, myCarbohydrate: carbohydrate, myProtein: protein, myFat: fat, myDietaryFiber: dietaryFiber, mySodium: sodium, mySugar: sugar)
+                            context.insert(newTargetNutrient)
+                        } else {
+                            // 기존 TargetNutrient 찾아 업데이트
+                            let descriptor = FetchDescriptor<TargetNutrient>(predicate: #Predicate { $0.id == targetNutrientId })
+                            if let existingTargetNutrient = try? context.fetch(descriptor).first {
+                                existingTargetNutrient.myKcal = kcal
+                                existingTargetNutrient.myCarbohydrate = carbohydrate
+                                existingTargetNutrient.myProtein = protein
+                                existingTargetNutrient.myFat = fat
+                                existingTargetNutrient.myDietaryFiber = dietaryFiber
+                                existingTargetNutrient.mySodium = sodium
+                                existingTargetNutrient.mySugar = sugar
+                            }
+                        }
+                        
+                        try? context.save()
+                    }
+                }
                 
             case .binding(_):
                 return .none
