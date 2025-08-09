@@ -11,153 +11,185 @@ struct AnalyzeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 8) {
-                    // --- 차트 섹션 ---
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("영양성분")
-                                .font(.title2.bold())
-                            Spacer()
-                            Button(action: {
-                                store.send(.chartAreaTapped)
-                            }) {
-                                !store.isExpanded ? Text("자세히") : Text("간단히")
-                                    .foregroundStyle(Color("TextButton"))
-                            }
-                        }
-                        // "열량" 차트
-                        if let caloriesItem = item(for: "열량") {
-                            ChartView(
-                                nutrient: caloriesItem.nutrient,
-                                maxValue: caloriesItem.maxValue,
-                                barColor: caloriesItem.barColor,
-                                showValues: store.isExpanded
-                            )
-                        }
-                        if store.isExpanded {
-                            // 나머지 6개 항목
-                            ForEach(store.analyzeItems.filter { $0.nutrient.label != "열량" }) { item in
-                                ChartView(
-                                    nutrient: item.nutrient,
-                                    maxValue: item.maxValue,
-                                    barColor: item.barColor,
-                                    showValues: true
-                                )
-                            }
-                        } else {
-                            // 요약된 3x2 그리드
-                            HStack(spacing: 16) {
-                                if let carbsItem = item(for: "탄수화물") {
+            Group {
+                if store.isTargetNutrientSet {
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            // --- 차트 섹션 ---
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack {
+                                    Text("영양성분")
+                                        .font(.title2.bold())
+                                    Spacer()
+                                    Button(action: {
+                                        store.send(.chartAreaTapped)
+                                    }) {
+                                        !store.isExpanded ? Text("자세히") : Text("간단히")
+                                            .foregroundStyle(Color("TextButton"))
+                                    }
+                                }
+                                // "열량" 차트
+                                if let caloriesItem = item(for: "열량") {
                                     ChartView(
-                                        nutrient: carbsItem.nutrient,
-                                        maxValue: carbsItem.maxValue,
-                                        barColor: carbsItem.barColor,
-                                        showValues: false
+                                        nutrient: caloriesItem.nutrient,
+                                        maxValue: caloriesItem.maxValue,
+                                        barColor: caloriesItem.barColor,
+                                        showValues: store.isExpanded
                                     )
                                 }
-                                if let proteinItem = item(for: "단백질") {
-                                    ChartView(
-                                        nutrient: proteinItem.nutrient,
-                                        maxValue: proteinItem.maxValue,
-                                        barColor: proteinItem.barColor,
-                                        showValues: false
-                                    )
+                                if store.isExpanded {
+                                    // 나머지 6개 항목
+                                    ForEach(store.analyzeItems.filter { $0.nutrient.label != "열량" }) { item in
+                                        ChartView(
+                                            nutrient: item.nutrient,
+                                            maxValue: item.maxValue,
+                                            barColor: item.barColor,
+                                            showValues: true
+                                        )
+                                    }
+                                } else {
+                                    // 요약된 3x2 그리드
+                                    HStack(spacing: 16) {
+                                        if let carbsItem = item(for: "탄수화물") {
+                                            ChartView(
+                                                nutrient: carbsItem.nutrient,
+                                                maxValue: carbsItem.maxValue,
+                                                barColor: carbsItem.barColor,
+                                                showValues: false
+                                            )
+                                        }
+                                        if let proteinItem = item(for: "단백질") {
+                                            ChartView(
+                                                nutrient: proteinItem.nutrient,
+                                                maxValue: proteinItem.maxValue,
+                                                barColor: proteinItem.barColor,
+                                                showValues: false
+                                            )
+                                        }
+                                        if let fatItem = item(for: "지방") {
+                                            ChartView(
+                                                nutrient: fatItem.nutrient,
+                                                maxValue: fatItem.maxValue,
+                                                barColor: fatItem.barColor,
+                                                showValues: false
+                                            )
+                                        }
+                                    }
+                                    HStack(spacing: 16) {
+                                        if let fiberItem = item(for: "식이섬유") {
+                                            ChartView(
+                                                nutrient: fiberItem.nutrient,
+                                                maxValue: fiberItem.maxValue,
+                                                barColor: fiberItem.barColor,
+                                                showValues: false
+                                            )
+                                        }
+                                        if let sugarItem = item(for: "당류") {
+                                            ChartView(
+                                                nutrient: sugarItem.nutrient,
+                                                maxValue: sugarItem.maxValue,
+                                                barColor: sugarItem.barColor,
+                                                showValues: false
+                                            )
+                                        }
+                                        if let sodiumItem = item(for: "나트륨") {
+                                            ChartView(
+                                                nutrient: sodiumItem.nutrient,
+                                                maxValue: sodiumItem.maxValue,
+                                                barColor: sodiumItem.barColor,
+                                                showValues: false
+                                            )
+                                        }
+                                    }
                                 }
-                                if let fatItem = item(for: "지방") {
-                                    ChartView(
-                                        nutrient: fatItem.nutrient,
-                                        maxValue: fatItem.maxValue,
-                                        barColor: fatItem.barColor,
-                                        showValues: false
-                                    )
-                                }
-                            }
-                            HStack(spacing: 16) {
-                                if let fiberItem = item(for: "식이섬유") {
-                                    ChartView(
-                                        nutrient: fiberItem.nutrient,
-                                        maxValue: fiberItem.maxValue,
-                                        barColor: fiberItem.barColor,
-                                        showValues: false
-                                    )
-                                }
-                                if let sugarItem = item(for: "당류") {
-                                    ChartView(
-                                        nutrient: sugarItem.nutrient,
-                                        maxValue: sugarItem.maxValue,
-                                        barColor: sugarItem.barColor,
-                                        showValues: false
-                                    )
-                                }
-                                if let sodiumItem = item(for: "나트륨") {
-                                    ChartView(
-                                        nutrient: sodiumItem.nutrient,
-                                        maxValue: sodiumItem.maxValue,
-                                        barColor: sodiumItem.barColor,
-                                        showValues: false
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 8)
-                    .animation(.spring(duration: 0.5), value: store.isExpanded)
-                    
-                    
-                    // --- 선택된 식단 리스트 ---
-                    if !store.selectedDiets.isEmpty {
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("선택된 식단")
-                                    .font(.title2.bold())
-                                Spacer()
-                                Button(store.isEditing ? "완료" : "편집") {
-                                    store.send(.editButtonTapped)
-                                }
-                                .foregroundStyle(Color("TextButton"))
                             }
                             .padding(.horizontal, 24)
-                            .padding(.top, 16)
-                            .padding(.bottom, 12)
-
-                            VStack(spacing: 0) {
-                                ForEach(store.selectedDiets) { entry in
-                                    HStack(spacing: 12) {
-                                        if store.isEditing {
-                                            Button(action: {
-                                                store.send(.deleteButtonTapped(id: entry.id))
-                                            }) {
-                                                Image(systemName: "minus.circle.fill")
-                                                    .foregroundColor(.red)
-                                                    .font(.title2)
-                                            }
+                            .padding(.vertical, 8)
+                            .animation(.spring(duration: 0.5), value: store.isExpanded)
+                            
+                            
+                            // --- 선택된 식단 리스트 ---
+                            if !store.selectedDiets.isEmpty {
+                                VStack(spacing: 0) {
+                                    HStack {
+                                        Text("선택된 식단")
+                                            .font(.title2.bold())
+                                        Spacer()
+                                        Button(store.isEditing ? "완료" : "편집") {
+                                            store.send(.editButtonTapped)
                                         }
-                                        AnalyzeSelectedDietCell(diet: entry.diet)
-                                            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 20))
-                                            .onDrag {
-                                                if store.isEditing {
-                                                    store.send(.setDraggedDiet(entry))
-                                                    return NSItemProvider() // Return an empty provider: 실제 상태 관리는 draggedDiet 변수가 전담
-                                                }
-                                                return NSItemProvider()
-                                            }
-                                            .wiggle(isWiggling: store.isEditing)
+                                        .foregroundStyle(Color("TextButton"))
                                     }
-                                    .onDrop(of: [.text], delegate: DietDropDelegate(item: entry, draggedItem: $store.draggedDiet, store: store))
                                     .padding(.horizontal, 24)
+                                    .padding(.top, 16)
                                     .padding(.bottom, 12)
+                                    
+                                    VStack(spacing: 0) {
+                                        ForEach(store.selectedDiets) { entry in
+                                            HStack(spacing: 12) {
+                                                if store.isEditing {
+                                                    Button(action: {
+                                                        store.send(.deleteButtonTapped(id: entry.id))
+                                                    }) {
+                                                        Image(systemName: "minus.circle.fill")
+                                                            .foregroundColor(.red)
+                                                            .font(.title2)
+                                                    }
+                                                }
+                                                AnalyzeSelectedDietCell(diet: entry.diet)
+                                                    .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 20))
+                                                    .onDrag {
+                                                        if store.isEditing {
+                                                            store.send(.setDraggedDiet(entry))
+                                                            return NSItemProvider() // Return an empty provider: 실제 상태 관리는 draggedDiet 변수가 전담
+                                                        }
+                                                        return NSItemProvider()
+                                                    }
+                                                    .wiggle(isWiggling: store.isEditing)
+                                            }
+                                            .onDrop(of: [.text], delegate: DietDropDelegate(item: entry, draggedItem: $store.draggedDiet, store: store))
+                                            .padding(.horizontal, 24)
+                                            .padding(.bottom, 12)
+                                        }
+                                        if store.isEditing {
+                                            // 삭제했을 때 스크롤이 위로 올라와 애니메이션이 스킵됨을 방지
+                                            Spacer().frame(height: 120)
+                                        }
+                                    }
+                                    .animation(.default, value: store.selectedDiets)
                                 }
-                                if store.isEditing {
-                                    // 삭제했을 때 스크롤이 위로 올라와 애니메이션이 스킵됨을 방지
-                                    Spacer().frame(height: 120)
-                                }
+                                .background(Color("AppBackgroundColor"))
                             }
-                            .animation(.default, value: store.selectedDiets)
                         }
-                        .background(Color("AppBackgroundColor"))
                     }
+                } else {
+                    VStack(spacing: 24) {
+                        Spacer()
+                        Text("목표 섭취량이 설정되지 않았어요")
+                            .font(.headline)
+                        Text("정확한 분석을 위해\n목표 섭취량을 먼저 설정해주세요.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        
+                        Button(action: {
+                            store.send(.goToMyPageButtonTapped)
+                        }) {
+                            Text("목표 섭취량 설정하러 가기")
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 60)
+                                .background(Color("AppTintColor"))
+                                .cornerRadius(30)
+                        }
+                        .padding(.horizontal, 24)
+                        .font(.headline.bold())
+                        .foregroundStyle(.black)
+                        .buttonStyle(PlainButtonStyle())
+                        .contentShape(Rectangle())
+                        Spacer()
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .onAppear {
@@ -165,12 +197,14 @@ struct AnalyzeView: View {
             }
             .background(Color("AppBackgroundColor"))
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button (action: {
-                        store.send(.presentAnalyzeAddDietSheet)
-                    }) {
-                        Image(systemName: "plus")
-                            .foregroundStyle(Color("AppSecondaryColor"))
+                if store.isTargetNutrientSet {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button (action: {
+                            store.send(.presentAnalyzeAddDietSheet)
+                        }) {
+                            Image(systemName: "plus")
+                                .foregroundStyle(Color("AppSecondaryColor"))
+                        }
                     }
                 }
             }

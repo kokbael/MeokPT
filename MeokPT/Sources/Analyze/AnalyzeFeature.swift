@@ -68,23 +68,15 @@ struct AnalyzeFeature {
             ]
         }
         
-        var maxValues: [String: Double] = [
-            "열량": 2400,
-            "탄수화물": 324,
-            "단백질": 60,
-            "지방": 51,
-            "식이섬유": 25,
-            "당류": 50,
-            "나트륨": 2000
-        ]
+        var maxValues: [String: Double] = [:]
         
         var analyzeItems: [AnalyzeData] {
             currentNutrients.map { nutrient in
-                // 1. maxValue 계산
-                let maxValue = maxValues[nutrient.label] ?? nutrient.value * 1.5
+                // 1. maxValue 계산 (목표량이 설정되지 않았으면 0으로 처리)
+                let maxValue = maxValues[nutrient.label] ?? 0
                 
-                // 2. barColor 계산
-                let percentage = nutrient.value / maxValue
+                // 2. barColor 계산 (0으로 나누기 방지)
+                let percentage = (maxValue > 0) ? (nutrient.value / maxValue) : 0
                 let barColor: Color
                 if percentage < 0.8 {
                     barColor = .blue
@@ -104,6 +96,10 @@ struct AnalyzeFeature {
         @Presents var analyzeAddDietSheet: AnalyzeAddDietFeature.State?
         var isEditing: Bool = false
         var draggedDiet: SelectedDiet?
+        
+        var isTargetNutrientSet: Bool {
+            !maxValues.isEmpty && maxValues.values.reduce(0, +) > 0
+        }
     }
     
     enum Action: BindableAction {
@@ -114,12 +110,14 @@ struct AnalyzeFeature {
         case delegate(DelegateAction)
         case analyzeAddDietAction(PresentationAction<AnalyzeAddDietFeature.Action>)
         case dismissSheet
-        case loadSelectedDiets
+        case loadData
         case dietsLoaded([SelectedDiet])
+        case targetNutrientLoaded(TargetNutrient?)
         case editButtonTapped
         case deleteButtonTapped(id: UUID)
         case setDraggedDiet(SelectedDiet?)
         case moveDiet(from: UUID, to: UUID)
+        case goToMyPageButtonTapped
     }
     
     enum DelegateAction {
@@ -133,7 +131,7 @@ struct AnalyzeFeature {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                return .send(.loadSelectedDiets)
+                return .send(.loadData)
                 
             case .chartAreaTapped:
                 state.isExpanded.toggle()
@@ -149,18 +147,20 @@ struct AnalyzeFeature {
             case .analyzeAddDietAction(.presented(.delegate(.dietsAdded))):
                 return .run { send in
                     await send(.dismissSheet)
-                    await send(.loadSelectedDiets)
+                    await send(.loadData)
                 }
                 
             case .dismissSheet:
                 state.analyzeAddDietSheet = nil
                 return .none
                 
-            case .loadSelectedDiets:
+            case .loadData:
                 return .run { send in
                     await MainActor.run {
                         do {
                             let context = modelContainer.mainContext
+                            
+                            // Load Selected Diets
                             let selectionDescriptor = FetchDescriptor<AnalysisSelection>(sortBy: [SortDescriptor(\.orderIndex)])
                             let selections = try context.fetch(selectionDescriptor)
                             
@@ -173,16 +173,33 @@ struct AnalyzeFeature {
                                 }
                                 return nil
                             }
-                            
                             send(.dietsLoaded(selectedDiets))
+                            
+                            // Load Target Nutrient
+                            let targetNutrientDescriptor = FetchDescriptor<TargetNutrient>()
+                            let targetNutrient = try context.fetch(targetNutrientDescriptor).first
+                            send(.targetNutrientLoaded(targetNutrient))
+                            
                         } catch {
-                            print("Failed to load selected diets: \(error)")
+                            print("Failed to load data: \(error)")
                         }
                     }
                 }
                 
             case let .dietsLoaded(diets):
                 state.selectedDiets = diets
+                return .none
+                
+            case let .targetNutrientLoaded(targetNutrient):
+                if let nutrient = targetNutrient {
+                    state.maxValues["열량"] = nutrient.myKcal
+                    state.maxValues["탄수화물"] = nutrient.myCarbohydrate
+                    state.maxValues["단백질"] = nutrient.myProtein
+                    state.maxValues["지방"] = nutrient.myFat
+                    state.maxValues["식이섬유"] = nutrient.myDietaryFiber
+                    state.maxValues["당류"] = nutrient.mySugar
+                    state.maxValues["나트륨"] = nutrient.mySodium
+                }
                 return .none
                 
             case .editButtonTapped:
@@ -239,8 +256,11 @@ struct AnalyzeFeature {
                             print("Failed to save new order: \(error)")
                         }
                     }
-                    await send(.loadSelectedDiets)
+                    await send(.loadData)
                 }
+                
+            case .goToMyPageButtonTapped:
+                return .send(.delegate(.navigateToMyPage))
                 
             case .analyzeAddDietAction(_):
                 return .none
