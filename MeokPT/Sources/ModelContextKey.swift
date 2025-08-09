@@ -9,6 +9,8 @@ private enum ModelContainerKey: DependencyKey {
         Food.self,
         SharedPostRecord.self,
         AnalysisSelection.self,
+        MyData.self,
+        TargetNutrient.self,
     ])
     
     static var liveValue: ModelContainer {

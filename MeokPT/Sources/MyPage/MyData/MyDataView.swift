@@ -33,21 +33,20 @@ struct MyDataView: View {
                                 .fixedSize()
                             }
                             
-                            // 영양성분 입력
                             VStack(spacing: 8) {
-                                NutrientRow(label: "열량", unit: "kcal", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customKcal, displayValue: store.myKcal, focus: .kcal, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "열량", unit: "kcal", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customKcal, displayValue: store.targetNutrient?.myKcal, focus: .kcal, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "탄수화물", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customCarbohydrate, displayValue: store.myCarbohydrate, focus: .carbohydrate, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "탄수화물", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customCarbohydrate, displayValue: store.targetNutrient?.myCarbohydrate, focus: .carbohydrate, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "단백질", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customProtein, displayValue: store.myProtein, focus: .protein, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "단백질", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customProtein, displayValue: store.targetNutrient?.myProtein, focus: .protein, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "지방", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customFat, displayValue: store.myFat, focus: .fat, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "지방", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customFat, displayValue: store.targetNutrient?.myFat, focus: .fat, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "식이섬유", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customDietaryFiber, displayValue: store.myDietaryFiber, focus: .dietaryFiber, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "식이섬유", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customDietaryFiber, displayValue: store.targetNutrient?.myDietaryFiber, focus: .dietaryFiber, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "당류", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customSugar, displayValue: store.mySugar, focus: .sugar, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "당류", unit: "g", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customSugar, displayValue: store.targetNutrient?.mySugar, focus: .sugar, focusedField: $focusedNutrientField)
                                 Divider()
-                                NutrientRow(label: "나트륨", unit: "mg", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customSodium, displayValue: store.mySodium, focus: .sodium, focusedField: $focusedNutrientField)
+                                NutrientRow(label: "나트륨", unit: "mg", autoOrCustom: store.selectedAutoOrCustomFilter, text: $store.customSodium, displayValue: store.targetNutrient?.mySodium, focus: .sodium, focusedField: $focusedNutrientField)
                             }
                             .padding()
                             .background(Color(uiColor: .secondarySystemGroupedBackground))
@@ -259,7 +258,7 @@ struct MyDataView: View {
             }
         }
         .onAppear {
-            
+            store.send(.onAppear)
         }
         .tint(Color("TextButton"))
     }

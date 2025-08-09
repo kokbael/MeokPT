@@ -23,13 +23,13 @@ enum AutoOrCustomFilter: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
-enum GenderFilter: String, CaseIterable, Identifiable {
+enum GenderFilter: String, CaseIterable, Identifiable, Codable {
     case male = "남성"
     case female = "여성"
     var id: String { self.rawValue }
 }
 
-enum TargetFilter: String, CaseIterable, Identifiable {
+enum TargetFilter: String, CaseIterable, Identifiable, Codable {
     case weightLoss = "체중 감량"
     case weightGain = "체중 증량"
     case healthy = "건강 유지"
@@ -43,14 +43,10 @@ struct MyDataFeature {
     struct State: Equatable {
         var selectedAutoOrCustomFilter: AutoOrCustomFilter = .custom
         var focusedNutrientField: NutrientField?
-        // 최종 저장될 영양성분
-        var myKcal: Double?
-        var myCarbohydrate: Double?
-        var myProtein: Double?
-        var myFat: Double?
-        var myDietaryFiber: Double?
-        var mySodium: Double?
-        var mySugar: Double?
+        
+        // SwiftData 모델
+        var myData: MyData?
+        var targetNutrient: TargetNutrient?
         
         // 직접 입력을 위한 임시 상태
         var customKcal: String = ""
@@ -85,6 +81,7 @@ struct MyDataFeature {
     
     enum Action: BindableAction {
         case binding(BindingAction<State>)
+        case onAppear
         case presentActivityLevelSheet
         case activityLevelSheetAction(PresentationAction<ActivityLevelFeature.Action>)
         case dismissSheet
@@ -92,7 +89,11 @@ struct MyDataFeature {
         case updateNutrientsTapped
         case saveCustomNutrientsTapped
         case formatCustomNutrientField(NutrientField?)
+        case myDataLoaded(MyData?)
+        case targetNutrientLoaded(TargetNutrient?)
     }
+    
+    @Dependency(\.modelContainer) var modelContainer
     
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -117,6 +118,67 @@ struct MyDataFeature {
         
         Reduce { state, action in
             switch action {
+            case .onAppear:
+                return .run { send in
+                    await MainActor.run {
+                        let context = modelContainer.mainContext
+                        
+                        let myDataDescriptor = FetchDescriptor<MyData>()
+                        let myData = try? context.fetch(myDataDescriptor).first
+                        send(.myDataLoaded(myData))
+                        
+                        let targetNutrientDescriptor = FetchDescriptor<TargetNutrient>()
+                        let targetNutrient = try? context.fetch(targetNutrientDescriptor).first
+                        send(.targetNutrientLoaded(targetNutrient))
+                    }
+                }
+                
+            case .myDataLoaded(let myData):
+                if let myData {
+                    state.myData = myData
+                    state.myHeight = myData.myHeight
+                    state.myAge = myData.myAge
+                    state.myWeight = myData.myWeight
+                    state.selectedGenderFilter = myData.selectedGenderFilter
+                    state.selectedTargetFilter = myData.selectedTargetFilter
+                    state.activityLevel = myData.activityLevel
+                    state.activityLevelTitle = myData.activityLevel.title
+                } else {
+                    return .run { send in
+                        await MainActor.run {
+                            let newMyData = MyData(id: UUID(), myHeight: "", myAge: "", myWeight: "", selectedGenderFilter: .male, selectedTargetFilter: .weightLoss, activityLevel: .veryLow)
+                            modelContainer.mainContext.insert(newMyData)
+                            // State 업데이트를 위해 다시 로드 액션을 보낼 수 있지만,
+                            // 이 경우엔 UI가 즉시 업데이트 될 필요는 없으므로 send 생략 가능
+                            // 필요하다면 아래 코드를 활성화
+                            // await send(.myDataLoaded(newMyData))
+                        }
+                    }
+                }
+                return .none
+                
+            case .targetNutrientLoaded(let targetNutrient):
+                if let targetNutrient {
+                    state.targetNutrient = targetNutrient
+                    // 자동계산이 아닌 직접입력 값을 보여주기 위함
+                    state.customKcal = targetNutrient.myKcal.formattedString
+                    state.customCarbohydrate = targetNutrient.myCarbohydrate.formattedString
+                    state.customProtein = targetNutrient.myProtein.formattedString
+                    state.customFat = targetNutrient.myFat.formattedString
+                    state.customDietaryFiber = targetNutrient.myDietaryFiber.formattedString
+                    state.customSodium = targetNutrient.mySodium.formattedString
+                    state.customSugar = targetNutrient.mySugar.formattedString
+                } else {
+                    return .run { send in
+                        await MainActor.run {
+                            let newTargetNutrient = TargetNutrient(id: UUID(), myKcal: 0, myCarbohydrate: 0, myProtein: 0, myFat: 0, myDietaryFiber: 0, mySodium: 0, mySugar: 0)
+                            modelContainer.mainContext.insert(newTargetNutrient)
+                            // await send(.targetNutrientLoaded(newTargetNutrient))
+                        }
+                    }
+                }
+                return .none
+                
             case .presentActivityLevelSheet:
                 state.activityLevelSheet = ActivityLevelFeature.State()
                 return .none
@@ -124,6 +186,7 @@ struct MyDataFeature {
             case .activityLevelSheetAction(.presented(.delegate(.selectedLevel(let level)))):
                 state.activityLevel = level
                 state.activityLevelTitle = level.title
+                state.myData?.activityLevel = level
                 return .send(.dismissSheet)
                 
             case .activityLevelSheetAction(.presented(.delegate(.dismissSheet))):
@@ -175,18 +238,47 @@ struct MyDataFeature {
                 return .send(.calculateNutrients)
                 
             case .calculateNutrients:
-                calculateNutrients(state: &state)
-                return .none
+                guard let targetNutrient = state.targetNutrient else { return .none }
+                calculateNutrients(state: &state, targetNutrient: targetNutrient)
+                return .run { _ in
+                    await MainActor.run {
+                        try? modelContainer.mainContext.save()
+                    }
+                }
 
             case .saveCustomNutrientsTapped:
-                // 값들이 이미 포맷팅되었으므로, 간단히 변환만 수행
-                state.myKcal = Double(state.customKcal)
-                state.myCarbohydrate = Double(state.customCarbohydrate)
-                state.myProtein = Double(state.customProtein)
-                state.myFat = Double(state.customFat)
-                state.myDietaryFiber = Double(state.customDietaryFiber)
-                state.mySodium = Double(state.customSodium)
-                state.mySugar = Double(state.customSugar)
+                guard let targetNutrient = state.targetNutrient else { return .none }
+                targetNutrient.myKcal = Double(state.customKcal) ?? 0
+                targetNutrient.myCarbohydrate = Double(state.customCarbohydrate) ?? 0
+                targetNutrient.myProtein = Double(state.customProtein) ?? 0
+                targetNutrient.myFat = Double(state.customFat) ?? 0
+                targetNutrient.myDietaryFiber = Double(state.customDietaryFiber) ?? 0
+                targetNutrient.mySodium = Double(state.customSodium) ?? 0
+                targetNutrient.mySugar = Double(state.customSugar) ?? 0
+                return .run { _ in
+                    await MainActor.run {
+                        try? modelContainer.mainContext.save()
+                    }
+                }
+                
+            case .binding(\.myHeight):
+                state.myData?.myHeight = state.myHeight
+                return .none
+                
+            case .binding(\.myAge):
+                state.myData?.myAge = state.myAge
+                return .none
+
+            case .binding(\.myWeight):
+                state.myData?.myWeight = state.myWeight
+                return .none
+                
+            case .binding(\.selectedGenderFilter):
+                state.myData?.selectedGenderFilter = state.selectedGenderFilter
+                return .none
+                
+            case .binding(\.selectedTargetFilter):
+                state.myData?.selectedTargetFilter = state.selectedTargetFilter
                 return .none
                 
             case .binding(_):
@@ -198,7 +290,7 @@ struct MyDataFeature {
         }
     }
     
-    private func calculateNutrients(state: inout State) {
+    private func calculateNutrients(state: inout State, targetNutrient: TargetNutrient) {
         guard state.selectedAutoOrCustomFilter == .auto,
               let height = Double(state.myHeight),
               let weight = Double(state.myWeight),
@@ -221,17 +313,17 @@ struct MyDataFeature {
         let tdee = bmr * activityLevel.rawValue
         
         // 3. 목표에 따른 칼로리 조정
-        var targetKcal = tdee
+        var calculatedKcal = tdee
         switch state.selectedTargetFilter {
         case .weightLoss:
-            targetKcal -= 500
+            calculatedKcal -= 500
         case .weightGain:
-            targetKcal += 500
+            calculatedKcal += 500
         case .healthy, .vegan:
             break
         }
         
-        state.myKcal = max(0, targetKcal)
+        targetNutrient.myKcal = max(0, calculatedKcal)
         
         // 4. 목표별 단백질 섭취량 계산 (체중 기반)
         let proteinPerKg: Double
@@ -242,31 +334,31 @@ struct MyDataFeature {
             proteinPerKg = 1.2
         }
         let proteinInGrams = weight * proteinPerKg
-        state.myProtein = proteinInGrams
+        targetNutrient.myProtein = proteinInGrams
         
         let proteinInCalories = proteinInGrams * 4
         
         // 5. 지방 섭취량 계산 (총 칼로리의 25%)
-        let fatInCalories = targetKcal * 0.25
+        let fatInCalories = calculatedKcal * 0.25
         let fatInGrams = fatInCalories / 9
-        state.myFat = fatInGrams
+        targetNutrient.myFat = fatInGrams
         
         // 6. 탄수화물 섭취량 계산 (나머지 칼로리)
-        let carbInCalories = targetKcal - proteinInCalories - fatInCalories
+        let carbInCalories = calculatedKcal - proteinInCalories - fatInCalories
         let carbInGrams = carbInCalories / 4
-        state.myCarbohydrate = max(0, carbInGrams) // 탄수화물이 음수가 되지 않도록 보장
+        targetNutrient.myCarbohydrate = max(0, carbInGrams) // 탄수화물이 음수가 되지 않도록 보장
         
         // 7. 기타 영양소 계산
         // 식이섬유: 1,000 kcal 당 14g
-        state.myDietaryFiber = (targetKcal / 1000) * 14
+        targetNutrient.myDietaryFiber = (calculatedKcal / 1000) * 14
         // 나트륨: WHO 권장 상한선
-        state.mySodium = 2300
+        targetNutrient.mySodium = 2300
         // 당류: AHA 권장량 (성별 기반)
         switch state.selectedGenderFilter {
         case .male:
-            state.mySugar = 36
+            targetNutrient.mySugar = 36
         case .female:
-            state.mySugar = 25
+            targetNutrient.mySugar = 25
         }
     }
 }
