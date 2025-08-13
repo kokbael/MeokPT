@@ -5,13 +5,12 @@ import Foundation
 // ModelContainer를 의존성으로 주입
 private enum ModelContainerKey: DependencyKey {
     static let schema = Schema([
-        BodyInfo.self,
-        NutritionItem.self,
-        DietItem.self,
         Diet.self,
         Food.self,
         SharedPostRecord.self,
-        AnalyzeHistory.self
+        AnalysisSelection.self,
+        MyData.self,
+        TargetNutrient.self,
     ])
     
     static var liveValue: ModelContainer {

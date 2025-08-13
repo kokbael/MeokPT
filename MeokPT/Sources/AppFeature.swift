@@ -11,7 +11,7 @@ struct AppFeature {
     struct State {
         var selectedTab: Tab = .diet
         var dietState = DietFeature.State()
-        var analyzeState = DailyNutritionDietInfoFeature.State()
+        var analyzeState = AnalyzeFeature.State()
         var communityState = CommunityFeature.State()
         var myPageState = MyPageFeature.State()
         
@@ -34,7 +34,7 @@ struct AppFeature {
         
         case binding(BindingAction<State>)
         case dietAction(DietFeature.Action)
-        case analyzeAction(DailyNutritionDietInfoFeature.Action)
+        case analyzeAction(AnalyzeFeature.Action)
         case communityAction(CommunityFeature.Action)
         case myPageAction(MyPageFeature.Action)
         
@@ -66,7 +66,7 @@ struct AppFeature {
         BindingReducer()
         
         Scope(state: \.dietState, action: \.dietAction) { DietFeature() }
-        Scope(state: \.analyzeState, action: \.analyzeAction) { DailyNutritionDietInfoFeature() }
+        Scope(state: \.analyzeState, action: \.analyzeAction) { AnalyzeFeature() }
         Scope(state: \.communityState, action: \.communityAction) { CommunityFeature() }
         Scope(state: \.myPageState, action: \.myPageAction) { MyPageFeature() }
         

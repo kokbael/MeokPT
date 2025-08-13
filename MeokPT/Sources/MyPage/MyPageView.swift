@@ -8,8 +8,7 @@ struct MyPageView: View {
     var body: some View {
         NavigationStack {
             List {
-                // MARK: - Profile Section
-                Section {
+                Section(header: Text(store.userProfile == nil ? "" : "프로필 설정")) {
                     Button {
                         store.send(store.userProfile == nil ? .loginSignUpButtonTapped : .profileEditButtonTapped)
                     } label: {
@@ -35,44 +34,28 @@ struct MyPageView: View {
 
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .foregroundStyle(.gray)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Color(UIColor.systemGray3))
                         }
                         .padding(.vertical, 8)
                     }
                 }
 
-                // MARK: - 주요 기능
-                Section(header: Text("분석용 정보 입력")) {
+                Section(header: Text("목표 섭취량")) {
                     NavigationLink {
-                        BodyNutritionContainerView(
-                            initialTab: .bodyinInfoInput,
-                            bodyInfoStore: Store(initialState: BodyInfoInputFeature.State()) { BodyInfoInputFeature() },
-                            nutritionStore: Store(initialState: DailyNutritionFeature.State()) { DailyNutritionFeature() }
-                        )
+                        MyDataView(store: Store(initialState: MyDataFeature.State()) { MyDataFeature() })
                     } label: {
-                        Label("신체정보 입력", systemImage: "person.fill")
-                    }
-
-                    NavigationLink {
-                        BodyNutritionContainerView(
-                            initialTab: .dailyNutrition,
-                            bodyInfoStore: Store(initialState: BodyInfoInputFeature.State()) { BodyInfoInputFeature() },
-                            nutritionStore: Store(initialState: DailyNutritionFeature.State()) { DailyNutritionFeature() }
-                        )
-                    } label: {
-                        Label("하루 섭취량 입력", systemImage: "fork.knife")
+                        Label("목표 섭취량 설정하기", systemImage: "gearshape.2")
                     }
                 }
-                
                 Section(header: Text("저장한 분석")) {
                     NavigationLink {
-                        AIHistoryView(store: Store(initialState: AIHistoryFeature.State()) { AIHistoryFeature() })
+//                        AIHistoryView(store: Store(initialState: AIHistoryFeature.State()) { AIHistoryFeature() })
                     } label: {
-                        Label("저장한 분석 리스트 보기", systemImage: "list.bullet.clipboard.fill")
+                        Label("저장한 분석 리스트 보기", systemImage: "pencil.and.list.clipboard")
                     }
                 }
 
-                // MARK: - 내 활동
                 if store.currentUser != nil {
                     Section(header: Text("내 활동")) {
                         NavigationLink {
@@ -82,7 +65,6 @@ struct MyPageView: View {
                         }
                     }
 
-                    // MARK: - 계정 설정
                     Section(header: Text("계정")) {
                         Button {
                             store.showLogoutAlert = true

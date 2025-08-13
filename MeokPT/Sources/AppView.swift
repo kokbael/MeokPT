@@ -13,7 +13,7 @@ struct AppView: View {
                         Text("식단")
                     }
                     .tag(AppFeature.State.Tab.diet)
-                DailyNutritionDietInfoView(store: store.scope(state: \.analyzeState, action: \.analyzeAction))
+                AnalyzeView(store: store.scope(state: \.analyzeState, action: \.analyzeAction))
                     .tabItem {
                         Image(systemName: "chart.bar.xaxis")
                         Text("분석")

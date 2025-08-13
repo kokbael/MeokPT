@@ -1,3 +1,14 @@
+//
+//  ActivityLevelFeature.swift
+//  MeokPT
+//
+//  Created by 김동영 on 7/19/25.
+//
+
+import ComposableArchitecture
+import Foundation
+import SwiftData
+
 enum ActivityLevel: Double, CaseIterable, Identifiable, Equatable, Codable, Hashable {
     case veryLow = 1.2
     case low = 1.375
@@ -32,3 +43,37 @@ enum ActivityLevel: Double, CaseIterable, Identifiable, Equatable, Codable, Hash
         }
     }
 }
+
+
+@Reducer
+struct ActivityLevelFeature {
+    
+    @ObservableState
+    struct State: Equatable {
+
+    }
+    
+    enum Action {
+        case selectLevel(ActivityLevel)
+        case delegate(DelegateAction)
+    }
+    
+    enum DelegateAction: Equatable {
+        case dismissSheet
+        case selectedLevel(ActivityLevel)
+    }
+
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            switch action {
+            case let .selectLevel(level):
+                return .send(.delegate(.selectedLevel(level)))
+                
+            case .delegate(_):
+                return .none
+
+            }
+        }
+    }
+}
+
