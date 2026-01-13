@@ -7,6 +7,7 @@
 
 import AuthenticationServices
 
+@MainActor
 class AppleSignInCoordinator: NSObject, ASAuthorizationControllerDelegate {
     var onComplete: (Result<ASAuthorizationAppleIDCredential, Error>) -> Void
 
@@ -37,9 +38,15 @@ class AppleSignInCoordinator: NSObject, ASAuthorizationControllerDelegate {
 
 extension AppleSignInCoordinator: ASAuthorizationControllerPresentationContextProviding {
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        let scenes = UIApplication.shared.connectedScenes
-        let windowScene = scenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
-        let window = windowScene?.windows.first(where: { $0.isKeyWindow }) ?? windowScene?.windows.first
-        return window ?? UIWindow()
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let windowScene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        
+        guard let scene = windowScene else {
+            fatalError("No WindowScene found")
+        }
+
+        return scene.windows.first { $0.isKeyWindow }
+            ?? scene.windows.first
+            ?? UIWindow(windowScene: scene)
     }
 }
